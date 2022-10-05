@@ -1,3 +1,5 @@
+import graphviz
+
 class DirectedGraph:
     """
     A simple directed graph.
@@ -55,4 +57,19 @@ class DirectedGraph:
 
     def __str__(self):
         return f"directed graph with {self.nv()} vertices and {self.ne()} edges."
+
+    def visualize(self):
+        """
+        Visualize the graph by creating and displaying a graphviz image
+        """
+        # Create graphviz string
+        dot = graphviz.Digraph()
+        for v in self.vertices:
+            dot.node(str(v),str(v))
+        for e in self.edges:
+            dot.edge(str(e[0]), str(e[1]))
+
+        # Render the graph, saving files to temporary storage
+        s = graphviz.Source(dot.source)
+        s.render('/tmp/my_graph.gv', format='jpg', view=True)
 
