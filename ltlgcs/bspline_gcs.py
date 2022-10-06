@@ -107,21 +107,47 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         source = gcs_verts[self.start_vertex]
         target = gcs_verts[self.end_vertex]
         
-        # Add edge constraints
-        for edge in self.gcs.Edges():
-            if edge.v() != target:
-                # We don't add any constraints on transitions to the target
-                # region, since the target vertex is a trivial extra node that
-                # indicates task completion.
-                u_control_points = edge.xu().reshape(self.order+1,-1)
-                v_control_points = edge.xv().reshape(self.order+1,-1)
+        # Add continuity constraints. We do this by first constructing "dummy"
+        # splines for the source (u) and target (v) vertices of an arbitrary
+        # edge. This allows us to easily compute the control points of the
+        # derivatives of these paths. We can then use these to put constraints
+        # on the actual control points (namely that the first and last control
+        # points of the path and any continuous derivatives must line up)
+        dummy_xu = MakeMatrixContinuousVariable(self.order+1, self.dim, "xu")
+        dummy_xv = MakeMatrixContinuousVariable(self.order+1, self.dim, "xv")
+        dummy_vars = np.concatenate((dummy_xu.flatten(), dummy_xv.flatten()))
 
-                # Last control point of the previous region must line up with the
-                # first control point of the next region for continuity
-                constraints = eq(u_control_points[-1,:], v_control_points[0,:])
-                [edge.AddConstraint(c) for c in constraints]
+        dummy_path_u = BsplineTrajectory_[Expression](
+                BsplineBasis_[Expression](self.order+1, self.order+1, 
+                    KnotVectorType.kClampedUniform, 0, 1),
+                dummy_xu)
+        dummy_path_v = BsplineTrajectory_[Expression](
+                BsplineBasis_[Expression](self.order+1, self.order+1, 
+                    KnotVectorType.kClampedUniform, 0, 1),
+                dummy_xv)
 
-                # TODO: add smoothness constraints
+        self.continuity = 1   # TODO: parameterize
+        for i in range(self.continuity + 1):
+            # Compute constraints on the control points that ensure this level
+            # of continuity
+            dummy_path_u_deriv = dummy_path_u.MakeDerivative(i)
+            dummy_path_v_deriv = dummy_path_v.MakeDerivative(i)
+
+            continuity_err = dummy_path_v_deriv.control_points()[0] - \
+                             dummy_path_u_deriv.control_points()[-1]
+
+            continuity_constraint = LinearEqualityConstraint(
+                    DecomposeLinearExpressions(continuity_err, dummy_vars),
+                    np.zeros(self.dim))
+
+            # Apply the continuity constraints to each edge in the graph
+            for edge in self.gcs.Edges():
+                if edge.v() != target:
+                    edge.AddConstraint(Binding[Constraint](
+                        continuity_constraint,
+                        np.concatenate((edge.xu(), edge.xv()))
+                    ))
+
         
         # Add initial condition constraint
         for i in range(self.dim):
@@ -141,9 +167,9 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         """
         # Set solver options
         options = GraphOfConvexSetsOptions()
-        options.convex_relaxation = True
+        options.convex_relaxation = False
         options.preprocessing = False
-        options.solver = GurobiSolver()
+        options.solver = MosekSolver()
         solver_opts = SolverOptions()
         solver_opts.SetOption(CommonSolverOption.kPrintToConsole, verbose)
         options.solver_options = solver_opts

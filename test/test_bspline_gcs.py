@@ -28,7 +28,7 @@ class TestBsplineGcs(unittest.TestCase):
                    5 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
         
         bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 5,
-                [1,1], 2)
+                [0.5,1.5], 2)
         bgcs.AddLengthCost()
         res = bgcs.SolveShortestPath(verbose=True)
         self.assertTrue(res.is_success())
