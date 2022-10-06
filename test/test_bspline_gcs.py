@@ -27,15 +27,15 @@ class TestBsplineGcs(unittest.TestCase):
                    4 : HPolyhedron.MakeBox([4,3],[6,5]),
                    5 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
         
-
         bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 5,
                 [1,1], 2)
-        res = bgcs.SolveShortestPath(verbose=False)
+        bgcs.AddLengthCost()
+        res = bgcs.SolveShortestPath(verbose=True)
         self.assertTrue(res.is_success())
 
         # DEBUG: make some nice plots
         bgcs.PlotScenario()
-        bgcs.PlotSolution(res, plot_control_points=False, plot_path=True)
+        bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
         plt.show()
 
 

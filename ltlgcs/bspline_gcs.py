@@ -1,13 +1,6 @@
 from ltlgcs.graph import DirectedGraph
 
-from pydrake.geometry.optimization import (ConvexSet, VPolytope, 
-                                           GraphOfConvexSets,
-                                           GraphOfConvexSetsOptions)
-from pydrake.solvers import (GurobiSolver, MosekSolver, CommonSolverOption,
-                             SolverOptions)
-from pydrake.all import eq, le, ge
-from pydrake.math import BsplineBasis, KnotVectorType
-from pydrake.trajectories import BsplineTrajectory
+from pydrake.all import *
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,7 +63,18 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         self.source, self.target = self.SetupShortestPathProblem()
 
     def AddLengthCost(self):
-        pass
+        """
+        Add a penalty on the distance between control points, which is an
+        overapproximation of total path length.
+        """
+        for edge in self.gcs.Edges():
+            x = edge.xu()
+            control_points = x.reshape(self.order+1,-1)
+            for i in range(self.order):
+                diff = control_points[i,:] - control_points[i+1,:]
+                A = DecomposeLinearExpressions(diff, x)
+                cost = L2NormCost(A, np.zeros(self.dim))
+                edge.AddCost(Binding[Cost](cost, x))
 
     def AddDerivativeCost(self):
         pass
@@ -189,16 +193,16 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             xu = result.GetSolution(edge.xu())
 
             if phi > 0.999:
+                # Construct a bezier curve from the control points
                 control_points = xu.reshape(self.order+1, -1)
+                basis = BsplineBasis(self.order+1, self.order+1, 
+                                     KnotVectorType.kClampedUniform, 0, 1)
+                path = BsplineTrajectory(basis, control_points)
                 
                 if plot_control_points:
                     plt.plot(control_points[:,0], control_points[:,1], 'o--', color='red')
 
                 if plot_path:
-                    # Construct a bezier curve from the control points
-                    basis = BsplineBasis(self.order+1, self.order+1, 
-                                         KnotVectorType.kClampedUniform, 0, 1)
-                    path = BsplineTrajectory(basis, control_points)
                     curve = path.vector_values(np.linspace(0,1))
                     plt.plot(curve[0,:], curve[1,:], color='blue', linewidth=3)
 
