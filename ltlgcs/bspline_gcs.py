@@ -54,11 +54,14 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         pass
 
     def SolveShortestPath(self):
+        order = 2
+        dim = self.regions[self.vertices[0]].ambient_dimension()
+
         # Set options
         options = GraphOfConvexSetsOptions()
-        options.convex_relaxation = False
+        options.convex_relaxation = True
         options.preprocessing = False
-        options.solver = MosekSolver()
+        options.solver = GurobiSolver()
         options.solver_options = SolverOptions()
         options.solver_options.SetOption(CommonSolverOption.kPrintToConsole, 1)
        
@@ -67,7 +70,8 @@ class BSplineGraphOfConvexSets(DirectedGraph):
 
         gcs_verts = {}  # map our vertices to GCS vertices
         for v in self.vertices:
-            gcs_verts[v] = gcs.AddVertex(self.regions[v])
+            gcs_verts[v] = gcs.AddVertex(
+                    self.regions[v].CartesianPower(order + 1))
 
         for e in self.edges:
             # Get vertex IDs of source and target for this edge
@@ -82,10 +86,11 @@ class BSplineGraphOfConvexSets(DirectedGraph):
 
         # Add edge costs
         for e in gcs.Edges():
-            edge_cost = (e.xu() - e.xv()).dot(e.xu() - e.xv())
+            source_final_control_point = e.xu()[-dim:]
+            target_first_control_point = e.xv()[:dim]
+            #edge_cost = (e.xu() - e.xv()).dot(e.xu() - e.xv())
+            edge_cost = (source_final_control_point - target_first_control_point).dot(source_final_control_point - target_first_control_point)
             e.AddCost(edge_cost)
-
-
 
         # Add edge constraints
 
@@ -109,10 +114,17 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             xv = res.GetSolution(edge.xv())
             print(f"phi : {phi}, xu : {xu}, xv : {xv}")
 
-            if phi == 1.0:
+            if phi > 0.999:
                 # DEBUG: plot control points
-                plt.plot(xu[0], xu[1], 'ro')
-                plt.plot(xv[0], xv[1], 'ro')
+                u_control_points = xu.reshape(order+1, -1)
+                v_control_points = xv.reshape(order+1, -1)
+
+                print(u_control_points)
+
+                plt.plot(u_control_points[:,0], u_control_points[:,1], 'o-',
+                        color='red')
+                plt.plot(v_control_points[:,0], v_control_points[:,1], 'o-',
+                        color='red')
 
         # DEBUG: plot the scenario
         self.PlotScenario()
