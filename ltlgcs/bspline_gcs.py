@@ -1,7 +1,12 @@
 from ltlgcs.graph import DirectedGraph
 
-from pydrake.geometry.optimization import ConvexSet, VPolytope
-from pydrake.solvers import GurobiSolver
+from pydrake.geometry.optimization import (ConvexSet, VPolytope, 
+                                           GraphOfConvexSets,
+                                           GraphOfConvexSetsOptions)
+from pydrake.solvers import (GurobiSolver, MosekSolver, CommonSolverOption,
+                             SolverOptions)
+
+from pydrake.all import eq, le, ge
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -49,7 +54,71 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         pass
 
     def SolveShortestPath(self):
-        pass
+        # Set options
+        options = GraphOfConvexSetsOptions()
+        options.convex_relaxation = False
+        options.preprocessing = False
+        options.solver = MosekSolver()
+        options.solver_options = SolverOptions()
+        options.solver_options.SetOption(CommonSolverOption.kPrintToConsole, 1)
+       
+        # Create the graph
+        gcs = GraphOfConvexSets()
+
+        gcs_verts = {}  # map our vertices to GCS vertices
+        for v in self.vertices:
+            gcs_verts[v] = gcs.AddVertex(self.regions[v])
+
+        for e in self.edges:
+            # Get vertex IDs of source and target for this edge
+            u_id = gcs_verts[e[0]].id()
+            v_id = gcs_verts[e[1]].id()
+
+            gcs.AddEdge(u_id, v_id)
+        
+        # TODO: set source and target properly
+        source = gcs_verts[1].id()
+        target = gcs_verts[3].id()
+
+        # Add edge costs
+        for e in gcs.Edges():
+            edge_cost = (e.xu() - e.xv()).dot(e.xu() - e.xv())
+            e.AddCost(edge_cost)
+
+
+
+        # Add edge constraints
+
+        # Add initial condition constraint
+        # TODO: consider defining starting point as a new vertex in the graph
+        start_vertex = gcs_verts[1]
+        start_state = np.array([1.0, 1.0])
+        start_vertex.AddConstraint(start_vertex.x()[0] == start_state[0])
+        start_vertex.AddConstraint(start_vertex.x()[1] == start_state[1])
+        
+        
+
+        # Solve the problem
+        res = gcs.SolveShortestPath(source, target, options)
+        assert res.is_success(), "Optimization failed!"
+
+        # Extract the solution
+        for edge in gcs.Edges():
+            phi = res.GetSolution(edge.phi())
+            xu = res.GetSolution(edge.xu())
+            xv = res.GetSolution(edge.xv())
+            print(f"phi : {phi}, xu : {xu}, xv : {xv}")
+
+            if phi == 1.0:
+                # DEBUG: plot control points
+                plt.plot(xu[0], xu[1], 'ro')
+                plt.plot(xv[0], xv[1], 'ro')
+
+        # DEBUG: plot the scenario
+        self.PlotScenario()
+        plt.show()
+
+
     
     def PlotScenario(self):
         """
