@@ -6,39 +6,37 @@ from pydrake.geometry.optimization import HPolyhedron
 import matplotlib.pyplot as plt
 
 class TestBsplineGcs(unittest.TestCase):
-    def test_constructor(self):
-        vertices = [1,2,3]
-        edges = [(1,2), (2,3)]
-
-        r1 = HPolyhedron.MakeBox([0,0],[2,2])
-        r2 = HPolyhedron.MakeBox([0,2],[2,4])
-        r3 = HPolyhedron.MakeBox([2,2],[4,4])
-        regions = {1:r1, 2:r2, 3:r3}
-
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions)
-
     def test_scenario_plot(self):
-        vertices = [1,2,3,4]
+        vertices = [1,2,3]
         edges = [(1,2), (2,3)]
 
         regions = {1 : HPolyhedron.MakeBox([0,0],[2,2]),
                    2 : HPolyhedron.MakeBox([0,2],[2,4]),
                    3 : HPolyhedron.MakeBox([2,2],[4,4])}
 
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions)
+        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 3, [1,1], 2)
         bgcs.PlotScenario()
         plt.show(block=False)  # use block=True to see the plot
 
     def test_solve_shortest_path(self):
-        vertices = [1,2,3,4]
-        edges = [(1,2), (2,3), (3,4)]
+        vertices = [1,2,3,4,5]
+        edges = [(1,2), (2,3), (3,4), (4,5)]
         regions = {1 : HPolyhedron.MakeBox([0,0],[2,2]),
                    2 : HPolyhedron.MakeBox([0,2],[2,4]),
                    3 : HPolyhedron.MakeBox([2,2],[4,4]),
-                   4 : HPolyhedron.MakeBox([4,3],[6,5])}
+                   4 : HPolyhedron.MakeBox([4,3],[6,5]),
+                   5 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
+        
 
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions)
-        bgcs.SolveShortestPath()
+        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 5,
+                [1,1], 2)
+        res = bgcs.SolveShortestPath(verbose=False)
+        self.assertTrue(res.is_success())
+
+        # DEBUG: make some nice plots
+        bgcs.PlotScenario()
+        bgcs.PlotSolution(res, plot_control_points=False, plot_path=True)
+        plt.show()
 
 
 
