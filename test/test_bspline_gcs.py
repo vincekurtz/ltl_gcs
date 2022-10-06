@@ -30,11 +30,12 @@ class TestBsplineGcs(unittest.TestCase):
         plt.show(block=False)  # use block=True to see the plot
 
     def test_solve_shortest_path(self):
-        vertices = [1,2,3]
-        edges = [(1,2), (2,3), (1,3)]
+        vertices = [1,2,3,4]
+        edges = [(1,2), (2,3), (3,4)]
         regions = {1 : HPolyhedron.MakeBox([0,0],[2,2]),
-                   2 : HPolyhedron.MakeBox([0,2.1],[2.1,4]),
-                   3 : HPolyhedron.MakeBox([2.2,2.1],[4,4])}
+                   2 : HPolyhedron.MakeBox([0,2],[2,4]),
+                   3 : HPolyhedron.MakeBox([2,2],[4,4]),
+                   4 : HPolyhedron.MakeBox([4,3],[6,5])}
 
         bgcs = BSplineGraphOfConvexSets(vertices, edges, regions)
         bgcs.SolveShortestPath()

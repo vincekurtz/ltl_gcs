@@ -5,8 +5,9 @@ from pydrake.geometry.optimization import (ConvexSet, VPolytope,
                                            GraphOfConvexSetsOptions)
 from pydrake.solvers import (GurobiSolver, MosekSolver, CommonSolverOption,
                              SolverOptions)
-
 from pydrake.all import eq, le, ge
+from pydrake.math import BsplineBasis, KnotVectorType
+from pydrake.trajectories import BsplineTrajectory
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -62,8 +63,10 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         options.convex_relaxation = True
         options.preprocessing = False
         options.solver = GurobiSolver()
-        options.solver_options = SolverOptions()
-        options.solver_options.SetOption(CommonSolverOption.kPrintToConsole, 1)
+        solver_opts = SolverOptions()
+        solver_opts.SetOption(CommonSolverOption.kPrintToConsole, True)
+        options.solver_options = solver_opts
+
        
         # Create the graph
         gcs = GraphOfConvexSets()
@@ -81,28 +84,25 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             gcs.AddEdge(u_id, v_id)
         
         # TODO: set source and target properly
-        source = gcs_verts[1].id()
-        target = gcs_verts[3].id()
-
-        # Add edge costs
-        for e in gcs.Edges():
-            source_final_control_point = e.xu()[-dim:]
-            target_first_control_point = e.xv()[:dim]
-            #edge_cost = (e.xu() - e.xv()).dot(e.xu() - e.xv())
-            edge_cost = (source_final_control_point - target_first_control_point).dot(source_final_control_point - target_first_control_point)
-            e.AddCost(edge_cost)
+        source = gcs_verts[1]
+        target = gcs_verts[4]
 
         # Add edge constraints
+        for e in gcs.Edges():
+            u_control_points = e.xu().reshape(order+1,-1)
+            v_control_points = e.xv().reshape(order+1,-1)
+
+            constraints = eq(u_control_points[-1,:], v_control_points[0,:])
+            [e.AddConstraint(c) for c in constraints]
+
+            # TODO: add smoothness constraints
 
         # Add initial condition constraint
         # TODO: consider defining starting point as a new vertex in the graph
-        start_vertex = gcs_verts[1]
         start_state = np.array([1.0, 1.0])
-        start_vertex.AddConstraint(start_vertex.x()[0] == start_state[0])
-        start_vertex.AddConstraint(start_vertex.x()[1] == start_state[1])
+        source.AddConstraint(source.x()[0] == start_state[0])
+        source.AddConstraint(source.x()[1] == start_state[1])
         
-        
-
         # Solve the problem
         res = gcs.SolveShortestPath(source, target, options)
         assert res.is_success(), "Optimization failed!"
@@ -115,22 +115,22 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             print(f"phi : {phi}, xu : {xu}, xv : {xv}")
 
             if phi > 0.999:
-                # DEBUG: plot control points
-                u_control_points = xu.reshape(order+1, -1)
-                v_control_points = xv.reshape(order+1, -1)
+                # DEBUG: plot control points and bezier curves
+                # Note that we're ignoring (final) target state
+                control_points = xu.reshape(order+1, -1)
+                plt.scatter(control_points[:,0], control_points[:,1], color='red')
 
-                print(u_control_points)
-
-                plt.plot(u_control_points[:,0], u_control_points[:,1], 'o-',
-                        color='red')
-                plt.plot(v_control_points[:,0], v_control_points[:,1], 'o-',
-                        color='red')
+                basis = BsplineBasis(order+1, order+1, KnotVectorType.kClampedUniform, 0, 1)
+                path = BsplineTrajectory(
+                        basis, 
+                        control_points)
+                t = np.linspace(0,1)
+                curve = path.vector_values(t)
+                plt.plot(curve[0,:], curve[1,:], color='blue')
 
         # DEBUG: plot the scenario
         self.PlotScenario()
         plt.show()
-
-
     
     def PlotScenario(self):
         """
