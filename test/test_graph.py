@@ -20,12 +20,6 @@ class TestDirectedGraph(unittest.TestCase):
         self.assertEqual(g.nv(), 4)
         self.assertEqual(g.ne(), 3)
 
-    def test_visual(self):
-        vertices = [1,2,3]
-        edges = [(1,2), (2,3), (1,3)]
-        g = DirectedGraph(vertices, edges)
-        g.visualize()
-
 if __name__ == '__main__':
     unittest.main()
 
