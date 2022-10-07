@@ -14,7 +14,8 @@ class TestBsplineGcs(unittest.TestCase):
                    2 : HPolyhedron.MakeBox([0,2],[2,4]),
                    3 : HPolyhedron.MakeBox([2,2],[4,4])}
 
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 3, [1,1], 2)
+        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 3, [1,1],
+                order=2)
         bgcs.PlotScenario()
         plt.show(block=False)  # use block=True to see the plot
 
@@ -29,8 +30,9 @@ class TestBsplineGcs(unittest.TestCase):
                    5 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
         
         bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 0, 5,
-                [1.5,-0.5], 3)
-        bgcs.AddLengthCost(norm="L2_squared")
+                [1.5,-0.5], order=5, continuity=1)
+        bgcs.AddLengthCost(norm="L2")
+        bgcs.AddLengthCost(weight=1e1, norm="L2_squared")
         res = bgcs.SolveShortestPath(verbose=True)
         self.assertTrue(res.is_success())
 

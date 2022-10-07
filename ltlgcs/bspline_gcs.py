@@ -22,7 +22,7 @@ class BSplineGraphOfConvexSets(DirectedGraph):
           B-splines: it just indicates that the task is complete.
     """
     def __init__(self, vertices, edges, regions, start_vertex, end_vertex,
-                 start_point, order):
+                 start_point, order=2, continuity=1):
         """
         Construct a graph of convex sets
 
@@ -31,9 +31,10 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             edges:         list of pairs of integers (vertices) for each edge
             regions:       dictionary mapping each vertex to a Drake ConvexSet
             start_vertex:  index of the starting vertex
-            end_vertex:   index of the end/target vertex
+            end_vertex:    index of the end/target vertex
             start_point:   initial point of the path
             order:         order of bezier curve under consideration
+            continuity:    number of continuous derivatives of the curve
         """
         # General graph constructor
         super().__init__(vertices, edges)
@@ -56,21 +57,32 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         assert end_vertex in vertices
         self.start_vertex = start_vertex
         self.end_vertex = end_vertex
+       
+        # B-splines can guarantee continuity of n-1 derivatives
+        assert continuity < order
+        self.order = order
+        self.continuity = continuity
 
         # Create the GCS problem
-        self.order = order
         self.gcs = GraphOfConvexSets()
         self.source, self.target = self.SetupShortestPathProblem()
 
-    def AddLengthCost(self, norm="L2"):
+    def AddLengthCost(self, weight=1.0, norm="L2"):
         """
         Add a penalty on the distance between control points, which is an
         overapproximation of total path length.
 
         Args:
-            norm: Type of norm to use to evaluate distance between control
-                  points. "L1" leads to linear perspective constraints, while
-                  "L2" and "L2_squared" lead to cone constraints. 
+            weight: Weight for this cost, 
+            norm: Norm to use to when evaluating distance between control points
+
+        Note: L1 norm is most efficient, since it can be encoded in the GCS
+              problem using linear constraints only, leading to a QP. 
+
+              L2 norm is the closest approximation of the actual curve length.
+
+              L2_squared norm incentivised evenly spaced control points, which
+              can lead to smoother curves.
         """
         assert norm in ["L1", "L2", "L2_squared"], "invalid length norm"
         for edge in self.gcs.Edges():
@@ -80,13 +92,13 @@ class BSplineGraphOfConvexSets(DirectedGraph):
                 diff = control_points[i,:] - control_points[i+1,:]
                 A = DecomposeLinearExpressions(diff, x)
                 if norm == "L1":
-                    cost = L1NormCost(A, np.zeros(self.dim))
+                    cost = L1NormCost(weight*A, np.zeros(self.dim))
                     edge.AddCost(Binding[Cost](cost, x))
                 elif norm == "L2":
-                    cost = L2NormCost(A, np.zeros(self.dim))
+                    cost = L2NormCost(weight*A, np.zeros(self.dim))
                     edge.AddCost(Binding[Cost](cost, x))
                 else:  # L2 squared
-                    cost = diff.dot(diff)
+                    cost = weight*diff.dot(diff)
                     edge.AddCost(cost)
 
     def AddDerivativeCost(self):
@@ -139,10 +151,10 @@ class BSplineGraphOfConvexSets(DirectedGraph):
                     KnotVectorType.kClampedUniform, 0, 1),
                 dummy_xv)
 
-        self.continuity = 1   # TODO: parameterize
         for i in range(self.continuity + 1):
             # Compute constraints on the control points that ensure this level
-            # of continuity
+            # of continuity. 
+            # N.B. i=0 corresponds to the path itsefl
             dummy_path_u_deriv = dummy_path_u.MakeDerivative(i)
             dummy_path_v_deriv = dummy_path_v.MakeDerivative(i)
 
