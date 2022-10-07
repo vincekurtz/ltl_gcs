@@ -20,22 +20,26 @@ class TestBsplineGcs(unittest.TestCase):
         plt.show(block=False)  # use block=True to see the plot
 
     def test_solve_shortest_path(self):
-        vertices = [0,1,2,3,4,5]
-        edges = [(0,1),(1,2), (2,3), (3,4), (4,5)]
-        regions = {0 : HPolyhedron.MakeBox([1,-1],[2,0]),
+        vertices = [0,1,2,3,4,5,6]
+        edges = [(0,1), (1,0), 
+                 (1,2), (2,1),
+                 (2,3), (3,2),
+                 (3,4), (4,3), 
+                 (4,6),
+                 (0,5), (5,0),
+                 (5,6)]
+        regions = {0 : HPolyhedron.MakeBox([1,-1],[6,0]),
                    1 : HPolyhedron.MakeBox([0,0],[2,2]),
                    2 : HPolyhedron.MakeBox([0,2],[2,4]),
                    3 : HPolyhedron.MakeBox([2,2],[4,4]),
                    4 : HPolyhedron.MakeBox([4,3],[6,5]),
-                   5 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
+                   5 : HPolyhedron.MakeBox([5,0],[7,1]),
+                   6 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
         
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 5,
-                [1.0,1.0], order=5, continuity=4)
-        bgcs.AddLengthCost(norm="L1")
-        bgcs.AddDerivativeCost(1, weight=0.1, norm="L1")
-        bgcs.AddDerivativeCost(2, weight=0.1, norm="L1")
-        bgcs.AddDerivativeCost(3, weight=0.1, norm="L1")
-        bgcs.AddDerivativeCost(4, weight=0.1, norm="L1")
+        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 6,
+                [1.0,1.2], order=3, continuity=2)
+        bgcs.AddLengthCost(norm="L2")
+        bgcs.AddDerivativeCost(1, weight=0.1, norm="L2")
         res = bgcs.SolveShortestPath(verbose=True)
         self.assertTrue(res.is_success())
 
