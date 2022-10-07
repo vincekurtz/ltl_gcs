@@ -62,19 +62,32 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         self.gcs = GraphOfConvexSets()
         self.source, self.target = self.SetupShortestPathProblem()
 
-    def AddLengthCost(self):
+    def AddLengthCost(self, norm="L2"):
         """
         Add a penalty on the distance between control points, which is an
         overapproximation of total path length.
+
+        Args:
+            norm: Type of norm to use to evaluate distance between control
+                  points. "L1" leads to linear perspective constraints, while
+                  "L2" and "L2_squared" lead to cone constraints. 
         """
+        assert norm in ["L1", "L2", "L2_squared"], "invalid length norm"
         for edge in self.gcs.Edges():
             x = edge.xu()
             control_points = x.reshape(self.order+1,-1)
             for i in range(self.order):
                 diff = control_points[i,:] - control_points[i+1,:]
                 A = DecomposeLinearExpressions(diff, x)
-                cost = L2NormCost(A, np.zeros(self.dim))
-                edge.AddCost(Binding[Cost](cost, x))
+                if norm == "L1":
+                    cost = L1NormCost(A, np.zeros(self.dim))
+                    edge.AddCost(Binding[Cost](cost, x))
+                elif norm == "L2":
+                    cost = L2NormCost(A, np.zeros(self.dim))
+                    edge.AddCost(Binding[Cost](cost, x))
+                else:  # L2 squared
+                    cost = diff.dot(diff)
+                    edge.AddCost(cost)
 
     def AddDerivativeCost(self):
         pass
