@@ -123,7 +123,43 @@ class BSplineGraphOfConvexSets(DirectedGraph):
                 edge.AddCost(Binding[Cost](cost, x))
 
     def AddDerivativeCost(self):
-        pass
+        """
+        Add a penalty on the derivative of the path. We do this by applying an
+        approximate length cost (similar to AddLengthCost) to the derivative of
+        the path, e.g., on the distance between control points of the
+        derivative.
+        """
+        i = 1
+
+        # Get a symbolic version of the i^th derivative of a segment
+        path_deriv = self.dummy_path_u.MakeDerivative(i)
+
+        # Get a symbolic expression for the difference between subsequent
+        # control points in the i^th derivative, in terms of the original
+        # decision variables
+        deriv_control_points = path_deriv.control_points()
+
+        A = []
+        for j in range(self.order - i):
+            diff = deriv_control_points[j] - deriv_control_points[j+1]
+            A.append(DecomposeLinearExpressions(diff.flatten(),
+                        self.dummy_xu.flatten()))
+
+        norm = "L1"
+        weight = 1.0
+        # Apply a cost to the starting segment of each edge. 
+        for edge in self.gcs.Edges():
+            x = edge.xu()
+            for j in range(self.order - i):
+                if norm == "L1":
+                    cost = L1NormCost(weight*A[j], np.zeros(self.dim))
+                elif norm == "L2":
+                    cost = L2NormCost(weight*A[j], np.zeros(self.dim))
+                else:  # L2 squared
+                    cost = QuadraticCost(
+                            Q=weight*A[j].T@A[j], b=np.zeros(len(x)), c=0.0)
+                
+                edge.AddCost(Binding[Cost](cost, x))
 
     def SetupShortestPathProblem(self):
         """

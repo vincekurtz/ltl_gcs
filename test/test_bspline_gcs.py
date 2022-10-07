@@ -31,7 +31,7 @@ class TestBsplineGcs(unittest.TestCase):
         
         bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 5,
                 [1.0,1.0], order=2, continuity=1)
-        bgcs.AddLengthCost(norm="L2_squared")
+        bgcs.AddLengthCost(norm="L1")
         bgcs.AddDerivativeCost()
         #bgcs.AddLengthCost(weight=1e1, norm="L2_squared")
         res = bgcs.SolveShortestPath(verbose=True)
