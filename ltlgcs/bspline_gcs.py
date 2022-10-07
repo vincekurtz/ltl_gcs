@@ -90,49 +90,42 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         overapproximation of total path length.
 
         Args:
-            weight: Weight for this cost, 
-            norm: Norm to use to when evaluating distance between control points
-
-        Note: L1 norm is most efficient, since it can be encoded in the GCS
-              problem using linear constraints only, leading to a QP. 
-
-              L2 norm is the closest approximation of the actual curve length.
-
-              L2_squared norm incentivised evenly spaced control points, which
-              can lead to smoother curves.
+            weight: Weight for this cost, scalar.
+            norm: Norm to use to when evaluating distance between control
+                  points. See AddDerivativeCost for details.
         """
-        assert norm in ["L1", "L2", "L2_squared"], "invalid length norm"
+        self.AddDerivativeCost(0, weight=weight, norm=norm)
 
-        for edge in self.gcs.Edges():
-            x = edge.xu()
-            control_points = x.reshape(self.order+1,-1)
-            for i in range(self.order):
-                # Derive a linear expression for the difference between adjacent
-                # control points in terns of the decision variables
-                diff = control_points[i,:] - control_points[i+1,:]
-                A = DecomposeLinearExpressions(diff, x)
-
-                if norm == "L1":
-                    cost = L1NormCost(weight*A, np.zeros(self.dim))
-                elif norm == "L2":
-                    cost = L2NormCost(weight*A, np.zeros(self.dim))
-                else:  # L2 squared
-                    cost = QuadraticCost(
-                            Q=weight*A.T@A, b=np.zeros(len(x)), c=0.0)
-                
-                edge.AddCost(Binding[Cost](cost, x))
-
-    def AddDerivativeCost(self):
+    def AddDerivativeCost(self, degree, weight=1.0, norm="L2"):
         """
         Add a penalty on the derivative of the path. We do this by applying an
-        approximate length cost (similar to AddLengthCost) to the derivative of
-        the path, e.g., on the distance between control points of the
-        derivative.
+        approximate length cost to the derivative of the path, e.g., on the distance 
+        between control points of the derivative.
+
+        There are several norms we can use to approximate these lenths:
+            L1 - most computationally efficient, and introduces only linear
+            costs and constraints to the GCS problem.
+
+            L2 - closest approximation to the actual curve length, introduces
+            cone constraints to the GCS problem.
+
+            L2_squared - incentivises evenly space control points, which can
+            produce some nice smooth-looking curves. Introduces cone constraints
+            to the GCS problem. 
+        
+        Args:
+            degree: The derivative to penalize. degree=0 is the original
+                    trajectory, degree=1 is the first derivative, etc. 
+            weight: Weight for this cost, scalar
+            norm:   Norm to use to when evaluating distance between control
+                    points (see above)
         """
-        i = 1
+        assert norm in ["L1", "L2", "L2_squared"], "invalid length norm"
+        assert degree >= 0
+        assert degree < self.order
 
         # Get a symbolic version of the i^th derivative of a segment
-        path_deriv = self.dummy_path_u.MakeDerivative(i)
+        path_deriv = self.dummy_path_u.MakeDerivative(degree)
 
         # Get a symbolic expression for the difference between subsequent
         # control points in the i^th derivative, in terms of the original
@@ -140,25 +133,22 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         deriv_control_points = path_deriv.control_points()
 
         A = []
-        for j in range(self.order - i):
-            diff = deriv_control_points[j] - deriv_control_points[j+1]
+        for i in range(self.order - degree):
+            diff = deriv_control_points[i] - deriv_control_points[i+1]
             A.append(DecomposeLinearExpressions(diff.flatten(),
                         self.dummy_xu.flatten()))
 
-        norm = "L1"
-        weight = 1.0
         # Apply a cost to the starting segment of each edge. 
         for edge in self.gcs.Edges():
             x = edge.xu()
-            for j in range(self.order - i):
+            for i in range(self.order - degree):
                 if norm == "L1":
-                    cost = L1NormCost(weight*A[j], np.zeros(self.dim))
+                    cost = L1NormCost(weight*A[i], np.zeros(self.dim))
                 elif norm == "L2":
-                    cost = L2NormCost(weight*A[j], np.zeros(self.dim))
+                    cost = L2NormCost(weight*A[i], np.zeros(self.dim))
                 else:  # L2 squared
                     cost = QuadraticCost(
-                            Q=weight*A[j].T@A[j], b=np.zeros(len(x)), c=0.0)
-                
+                            Q=weight*A[i].T@A[i], b=np.zeros(len(x)), c=0.0)
                 edge.AddCost(Binding[Cost](cost, x))
 
     def SetupShortestPathProblem(self):
