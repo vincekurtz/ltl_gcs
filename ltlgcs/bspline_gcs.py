@@ -63,6 +63,23 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         self.order = order
         self.continuity = continuity
 
+        # Create "dummy" symbolic bsplines for an arbitrary edge. This allows us
+        # to derive expressions for various things, such as derivatives of the
+        # spline, in terms of the original control points (decision variables)
+        self.dummy_xu = MakeMatrixContinuousVariable(self.order+1, self.dim, "xu")
+        self.dummy_xv = MakeMatrixContinuousVariable(self.order+1, self.dim, "xv")
+        self.dummy_edge_vars = np.concatenate((
+            self.dummy_xu.flatten(), self.dummy_xv.flatten()))
+
+        self.dummy_path_u = BsplineTrajectory_[Expression](
+                BsplineBasis_[Expression](self.order+1, self.order+1, 
+                    KnotVectorType.kClampedUniform, 0, 1),
+                self.dummy_xu)
+        self.dummy_path_v = BsplineTrajectory_[Expression](
+                BsplineBasis_[Expression](self.order+1, self.order+1, 
+                    KnotVectorType.kClampedUniform, 0, 1),
+                self.dummy_xv)
+
         # Create the GCS problem
         self.gcs = GraphOfConvexSets()
         self.source, self.target = self.SetupShortestPathProblem()
@@ -85,21 +102,25 @@ class BSplineGraphOfConvexSets(DirectedGraph):
               can lead to smoother curves.
         """
         assert norm in ["L1", "L2", "L2_squared"], "invalid length norm"
+
         for edge in self.gcs.Edges():
             x = edge.xu()
             control_points = x.reshape(self.order+1,-1)
             for i in range(self.order):
+                # Derive a linear expression for the difference between adjacent
+                # control points in terns of the decision variables
                 diff = control_points[i,:] - control_points[i+1,:]
                 A = DecomposeLinearExpressions(diff, x)
+
                 if norm == "L1":
                     cost = L1NormCost(weight*A, np.zeros(self.dim))
-                    edge.AddCost(Binding[Cost](cost, x))
                 elif norm == "L2":
                     cost = L2NormCost(weight*A, np.zeros(self.dim))
-                    edge.AddCost(Binding[Cost](cost, x))
                 else:  # L2 squared
-                    cost = weight*diff.dot(diff)
-                    edge.AddCost(cost)
+                    cost = QuadraticCost(
+                            Q=weight*A.T@A, b=np.zeros(len(x)), c=0.0)
+                
+                edge.AddCost(Binding[Cost](cost, x))
 
     def AddDerivativeCost(self):
         pass
@@ -132,37 +153,21 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         source = gcs_verts[self.start_vertex]
         target = gcs_verts[self.end_vertex]
         
-        # Add continuity constraints. We do this by first constructing "dummy"
-        # splines for the source (u) and target (v) vertices of an arbitrary
-        # edge. This allows us to easily compute the control points of the
-        # derivatives of these paths. We can then use these to put constraints
-        # on the actual control points (namely that the first and last control
-        # points of the path and any continuous derivatives must line up)
-        dummy_xu = MakeMatrixContinuousVariable(self.order+1, self.dim, "xu")
-        dummy_xv = MakeMatrixContinuousVariable(self.order+1, self.dim, "xv")
-        dummy_vars = np.concatenate((dummy_xu.flatten(), dummy_xv.flatten()))
-
-        dummy_path_u = BsplineTrajectory_[Expression](
-                BsplineBasis_[Expression](self.order+1, self.order+1, 
-                    KnotVectorType.kClampedUniform, 0, 1),
-                dummy_xu)
-        dummy_path_v = BsplineTrajectory_[Expression](
-                BsplineBasis_[Expression](self.order+1, self.order+1, 
-                    KnotVectorType.kClampedUniform, 0, 1),
-                dummy_xv)
-
+        # Add continuity constraints. This includes both continuity (first and
+        # last control points line up) and smoothness (first and last control
+        # points of derivatives of the path line up).
         for i in range(self.continuity + 1):
-            # Compute constraints on the control points that ensure this level
-            # of continuity. 
             # N.B. i=0 corresponds to the path itsefl
-            dummy_path_u_deriv = dummy_path_u.MakeDerivative(i)
-            dummy_path_v_deriv = dummy_path_v.MakeDerivative(i)
+            dummy_path_u_deriv = self.dummy_path_u.MakeDerivative(i)
+            dummy_path_v_deriv = self.dummy_path_v.MakeDerivative(i)
 
             continuity_err = dummy_path_v_deriv.control_points()[0] - \
                              dummy_path_u_deriv.control_points()[-1]
 
             continuity_constraint = LinearEqualityConstraint(
-                    DecomposeLinearExpressions(continuity_err, dummy_vars),
+                    DecomposeLinearExpressions(
+                        continuity_err, 
+                        self.dummy_edge_vars),
                     np.zeros(self.dim))
 
             # Apply the continuity constraints to each edge in the graph
@@ -170,9 +175,7 @@ class BSplineGraphOfConvexSets(DirectedGraph):
                 if edge.v() != target:
                     edge.AddConstraint(Binding[Constraint](
                         continuity_constraint,
-                        np.concatenate((edge.xu(), edge.xv()))
-                    ))
-
+                        np.concatenate((edge.xu(), edge.xv()))))
         
         # Add initial condition constraint
         for i in range(self.dim):

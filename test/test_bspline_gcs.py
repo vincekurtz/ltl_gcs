@@ -29,10 +29,11 @@ class TestBsplineGcs(unittest.TestCase):
                    4 : HPolyhedron.MakeBox([4,3],[6,5]),
                    5 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
         
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 0, 5,
-                [1.5,-0.5], order=5, continuity=1)
-        bgcs.AddLengthCost(norm="L2")
-        bgcs.AddLengthCost(weight=1e1, norm="L2_squared")
+        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 5,
+                [1.0,1.0], order=2, continuity=1)
+        bgcs.AddLengthCost(norm="L2_squared")
+        bgcs.AddDerivativeCost()
+        #bgcs.AddLengthCost(weight=1e1, norm="L2_squared")
         res = bgcs.SolveShortestPath(verbose=True)
         self.assertTrue(res.is_success())
 
