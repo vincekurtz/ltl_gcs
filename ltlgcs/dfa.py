@@ -42,7 +42,6 @@ class DeterministicFiniteAutomaton(DirectedGraph):
         self.vertices = []  # list of vertices (represented as integer indeces)
         self.edges = []     # list of pairs of vertex indeces, e.g., (1,3)
 
-        self.predicates = []  # List of strings for each predicate
         self.labels = {}      # Maps edges to predicates, e.g., (1,3)->"a"
 
         self.initial_vertex = None
