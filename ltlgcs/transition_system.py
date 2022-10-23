@@ -2,6 +2,11 @@ from ltlgcs.graph import DirectedGraph
 
 from pydrake.all import *
 
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+from scipy.spatial import ConvexHull
+
 class TransitionSystem(DirectedGraph):
     """
     A finite state transition system that represents the robot's workspace.
@@ -76,3 +81,34 @@ class TransitionSystem(DirectedGraph):
         # TODO: consider additional check that the partitions for these two
         # states are not disjoint
         self.edges.append((source_vertex, target_vertex))
+
+    def visualize(self):
+        """
+        Make a pyplot visualization of the regions on the current pyplot axes. 
+        Only supports 2D polytopes for now. 
+        """
+        for vertex in self.vertices:
+            region = self.partitions[vertex]
+            label = self.labels[vertex]
+            assert region.ambient_dimension() == 2, "only 2D sets allowed"
+
+            # Compute vertices of the polygon in known order
+            v = VPolytope(region).vertices().T
+            hull = ConvexHull(v)
+            v_sorted = np.vstack([v[hull.vertices,0],v[hull.vertices,1]]).T
+
+            # Make a polygonal patch
+            poly = Polygon(v_sorted, alpha=0.5, edgecolor="k", linewidth=3)
+            plt.gca().add_patch(poly)
+
+            # Add a text label showing the predicates that hold in this partion
+            center_point = region.ChebyshevCenter()
+            plt.text(center_point[0], center_point[1], 
+                    ", ".join(['%s']*len(label)) % tuple(label),
+                    horizontalalignment='center',
+                    verticalalignment='center',
+                    fontsize=12, color='black')
+
+            # Use equal axes so square things look square
+        plt.axis('equal')
+

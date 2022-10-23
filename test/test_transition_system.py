@@ -24,3 +24,18 @@ class TestTransitionSystem(unittest.TestCase):
         self.assertEqual(ts.labels, {0:["a"], 1:["a", "b"]})
         self.assertEqual(ts.partitions, {0:partition_one, 1:partition_two})
 
+    def test_plot(self):
+        ts = TransitionSystem(2)
+        partition_one = HPolyhedron.MakeBox([0,0],[2,2]) 
+        label_one = ["a"]
+        vertex_one = ts.AddPartition(partition_one, label_one)
+        partition_two = HPolyhedron.MakeBox([1,2],[3,4])
+        label_two = ["a","b"]
+        vertex_two = ts.AddPartition(partition_two, label_two)
+        ts.AddEdge(vertex_one, vertex_two)
+
+        ts.visualize()
+
+        plt.show()
+
+
