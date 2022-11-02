@@ -209,20 +209,27 @@ class BSplineGraphOfConvexSets(DirectedGraph):
 
         return (source, target)
 
-    def SolveShortestPath(self, verbose=True):
+    def SolveShortestPath(self, verbose=True, convex_relaxation=False,
+            preprocessing=True, max_rounded_paths=0):
         """
         Solve the shortest path problem (self.gcs).
 
         Args:
             verbose: whether to print solver details to the screen
+            convex_relaxation: whether to solve the original MICP or the convex
+                               relaxation (+rounding)
+            preprocessing: preprocessing step to reduce the size of the graph
+            max_rounded_paths: number of distinct paths to compare during
+                               rounding for the convex relaxation
 
         Returns:
             result: a MathematicalProgramResult encoding the solution.
         """
         # Set solver options
         options = GraphOfConvexSetsOptions()
-        options.convex_relaxation = False
-        options.preprocessing = False
+        options.convex_relaxation = convex_relaxation
+        options.preprocessing = preprocessing
+        options.max_rounded_paths = max_rounded_paths
         options.solver = MosekSolver()
         solver_opts = SolverOptions()
         solver_opts.SetOption(CommonSolverOption.kPrintToConsole, verbose)
