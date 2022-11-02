@@ -82,9 +82,21 @@ class TransitionSystem(DirectedGraph):
         """
         assert source_vertex in self.vertices
         assert target_vertex in self.vertices
-        # TODO: consider additional check that the partitions for these two
-        # states are not disjoint
-        self.edges.append((source_vertex, target_vertex))
+        edge = (source_vertex, target_vertex)
+        assert edge not in self.edges, "edge already exists!"
+        self.edges.append(edge)
+
+    def AddEdgesFromIntersections(self):
+        """
+        Add transitions between all partitions that have some non-empty
+        intersection. 
+        """
+        for v1 in self.vertices:
+            for v2 in self.vertices:
+                r1 = self.partitions[v1]
+                r2 = self.partitions[v2]
+                if r1.IntersectsWith(r2) and (v1 != v2):
+                    self.AddEdge(v1, v2)
 
     def visualize(self):
         """

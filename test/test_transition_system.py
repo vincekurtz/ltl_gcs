@@ -74,16 +74,7 @@ class TestTransitionSystem(unittest.TestCase):
         label_four = []
         vertex_four = ts.AddPartition(partition_four, label_four)
 
-        ts.AddEdge(vertex_one, vertex_two)
-        ts.AddEdge(vertex_two, vertex_one)
-        ts.AddEdge(vertex_two, vertex_three)
-        ts.AddEdge(vertex_three, vertex_two)
-        ts.AddEdge(vertex_one, vertex_four)
-        ts.AddEdge(vertex_four, vertex_one)
-        ts.AddEdge(vertex_two, vertex_four)
-        ts.AddEdge(vertex_four, vertex_two)
-        ts.AddEdge(vertex_three, vertex_four)
-        ts.AddEdge(vertex_four, vertex_three)
+        ts.AddEdgesFromIntersections()
 
         # Set up a toy specification
         string = "(~b U c) & (F b)"
