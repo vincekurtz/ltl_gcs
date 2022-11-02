@@ -58,16 +58,35 @@ class TestTransitionSystem(unittest.TestCase):
     def test_product(self):
         # Make a toy transition system
         ts = TransitionSystem(2)
-        partition_one = HPolyhedron.MakeBox([0,0],[2,2]) 
+        partition_one = HPolyhedron.MakeBox([0,0],[1,4]) 
         label_one = ["a"]
         vertex_one = ts.AddPartition(partition_one, label_one)
+        
         partition_two = HPolyhedron.MakeBox([1,2],[3,4])
         label_two = ["a","b"]
         vertex_two = ts.AddPartition(partition_two, label_two)
+
+        partition_three = HPolyhedron.MakeBox([3,2],[5,4])
+        label_three = ["c"]
+        vertex_three = ts.AddPartition(partition_three, label_three)
+        
+        partition_four = HPolyhedron.MakeBox([1,0],[5,2])
+        label_four = []
+        vertex_four = ts.AddPartition(partition_four, label_four)
+
         ts.AddEdge(vertex_one, vertex_two)
+        ts.AddEdge(vertex_two, vertex_one)
+        ts.AddEdge(vertex_two, vertex_three)
+        ts.AddEdge(vertex_three, vertex_two)
+        ts.AddEdge(vertex_one, vertex_four)
+        ts.AddEdge(vertex_four, vertex_one)
+        ts.AddEdge(vertex_two, vertex_four)
+        ts.AddEdge(vertex_four, vertex_two)
+        ts.AddEdge(vertex_three, vertex_four)
+        ts.AddEdge(vertex_four, vertex_three)
 
         # Set up a toy specification
-        string = "(F b)"
+        string = "a U c"
         dfa = DeterministicFiniteAutomaton(string)
 
         # Create a B-spline Graph of Convex sets as the product of the
@@ -78,13 +97,13 @@ class TestTransitionSystem(unittest.TestCase):
         bgcs = ts.Product(dfa, start_point, order, continuity)
 
         # Solve a path planning problem on this graph
-        #bgcs.AddLengthCost(norm="L2")
+        bgcs.AddLengthCost(norm="L2")
         res = bgcs.SolveShortestPath(verbose=True)
         self.assertTrue(res.is_success())
 
         ts.visualize()
         bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
-        #dfa.visualize()
+        bgcs.visualize()
         plt.show()
 
 
