@@ -189,14 +189,29 @@ class TransitionSystem(DirectedGraph):
                             ((q, q_prime) in dfa.edges):
                         ts_label = self.labels[s_prime]
                         dfa_label = dfa.labels[(q,q_prime)]
-                        print(s, s_prime, q, q_prime)
-                        print(ts_label)
-                        print(dfa_label)
+
+                        # Only add edges where the label of transition system
+                        # matches the label of the DFA
+                        if satisfies(ts_label, dfa_label):
+                            edges.append((v,v_prime))
         
         # Define the ending vertex. There are edges from (s,q) to the end
         # vertex whenever q is in the accepting set of the DFA. 
         end_vertex = state_idx
+        for v in vertices:
+            s, q = states[v]
+            if q in dfa.accepting_vertices:
+                edges.append((v, end_vertex))
         vertices.append(end_vertex)
+
+        # TODO: eliminate need for this dummy region for the target state
+        regions[end_vertex] = HPolyhedron.MakeBox([0,0],[0,0])
+
+        # Construct and return the graph of convex sets
+        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, start_vertex,
+                end_vertex, start_point, order, continuity)
+
+        return bgcs
 
 def satisfies(ts_label, dfa_label):
     """
@@ -217,12 +232,14 @@ def satisfies(ts_label, dfa_label):
     # Construct a dictionary mapping predicates to their truth values depending
     # as defined by ts_label.
     ts_dict = {}
-    for symbol in parse_expr(dfa_label).free_symbols:
+    expression = parse_expr(dfa_label)
+    for symbol in expression.free_symbols:
         if str(symbol) in ts_label:
-            ts_dict[str(symbol)] = True
+            ts_dict[str(symbol)] = 1
         else:
-            ts_dict[str(symbol)] = False
+            ts_dict[str(symbol)] = 0
 
     # Use sympy to check whether the formula in ts_dict holds
-    return parse_expr(dfa_label, ts_dict)
+    res = expression.subs(ts_dict)
+    return res
 

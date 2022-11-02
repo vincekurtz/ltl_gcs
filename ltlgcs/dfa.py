@@ -73,7 +73,7 @@ class DeterministicFiniteAutomaton(DirectedGraph):
                 self.edges.append(edge_tuple)
 
                 # Add a label for this edge
-                self.labels[edge_tuple] = edge.get_attributes()["label"]
+                self.labels[edge_tuple] = edge.get_attributes()["label"].strip('"')
 
         # Find the accepting states
         accepting_states_line = self.dot_string.split('\n')[6]

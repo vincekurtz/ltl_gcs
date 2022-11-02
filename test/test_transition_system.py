@@ -50,6 +50,10 @@ class TestTransitionSystem(unittest.TestCase):
         self.assertTrue(satisfies(["a", "b"], "a | b"))
         self.assertTrue(satisfies(["a", "b"], "a & b"))
         self.assertTrue(satisfies([], "a | b | ~c"))
+        self.assertTrue(satisfies(["a"], "a"))
+        self.assertFalse(satisfies(["a"], "b"))
+        self.assertTrue(satisfies(["a"], '~b'))
+        self.assertFalse(satisfies(["a", "b"], "~b"))
 
     def test_product(self):
         # Make a toy transition system
@@ -71,11 +75,16 @@ class TestTransitionSystem(unittest.TestCase):
         start_point = [0.5, 0.2]
         order = 2
         continuity = 1
-        
-        bspline_gcs = ts.Product(dfa, start_point, order, continuity)
-        
-        #ts.visualize()
+        bgcs = ts.Product(dfa, start_point, order, continuity)
+
+        # Solve a path planning problem on this graph
+        #bgcs.AddLengthCost(norm="L2")
+        res = bgcs.SolveShortestPath(verbose=True)
+        self.assertTrue(res.is_success())
+
+        ts.visualize()
+        bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
         #dfa.visualize()
-        #plt.show()
+        plt.show()
 
 
