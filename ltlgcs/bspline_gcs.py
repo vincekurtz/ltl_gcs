@@ -210,7 +210,7 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         return (source, target)
 
     def SolveShortestPath(self, verbose=True, convex_relaxation=False,
-            preprocessing=True, max_rounded_paths=0):
+            preprocessing=True, max_rounded_paths=0, solver="mosek"):
         """
         Solve the shortest path problem (self.gcs).
 
@@ -221,6 +221,8 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             preprocessing: preprocessing step to reduce the size of the graph
             max_rounded_paths: number of distinct paths to compare during
                                rounding for the convex relaxation
+            solver: underling solver for the CP/MICP. Must be "mosek" or
+                    "gurobi"
 
         Returns:
             result: a MathematicalProgramResult encoding the solution.
@@ -230,7 +232,12 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         options.convex_relaxation = convex_relaxation
         options.preprocessing = preprocessing
         options.max_rounded_paths = max_rounded_paths
-        options.solver = MosekSolver()
+        if solver == "mosek":
+            options.solver = MosekSolver()
+        elif solver == "gurobi":
+            options.solver = GurobiSolver()
+        else:
+            raise ValueError(f"Unknown solver {solver}")
         solver_opts = SolverOptions()
         solver_opts.SetOption(CommonSolverOption.kPrintToConsole, verbose)
         options.solver_options = solver_opts
@@ -279,7 +286,7 @@ class BSplineGraphOfConvexSets(DirectedGraph):
             phi = result.GetSolution(edge.phi())
             xu = result.GetSolution(edge.xu())
 
-            if phi > 0.999:
+            if phi > 0.0:
                 # Construct a bezier curve from the control points
                 control_points = xu.reshape(self.order+1, -1)
                 basis = BsplineBasis(self.order+1, self.order+1, 
@@ -287,9 +294,11 @@ class BSplineGraphOfConvexSets(DirectedGraph):
                 path = BsplineTrajectory(basis, control_points)
                 
                 if plot_control_points:
-                    plt.plot(control_points[:,0], control_points[:,1], 'o--', color='red')
+                    plt.plot(control_points[:,0], control_points[:,1], 'o--',
+                            color='red', alpha=phi)
 
                 if plot_path:
                     curve = path.vector_values(np.linspace(0,1))
-                    plt.plot(curve[0,:], curve[1,:], color='blue', linewidth=3)
+                    plt.plot(curve[0,:], curve[1,:], color='blue', linewidth=3,
+                            alpha=phi)
 
