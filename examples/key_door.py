@@ -19,34 +19,38 @@ ts = TransitionSystem(2)
 ts.AddPartition(
         HPolyhedron.MakeBox([0,0],[5,10]), [])
 ts.AddPartition(
-        HPolyhedron.MakeBox([5,4],[7,6]), ["door"])
+        HPolyhedron.MakeBox([5,4],[7,6]), ["door1"])
 ts.AddPartition(
-        HPolyhedron.MakeBox([7,4],[9,6]), [])
+        HPolyhedron.MakeBox([7,2.1],[9,10]), [])
 ts.AddPartition(
-        HPolyhedron.MakeBox([9,4],[11,6]), ["goal"])
+        HPolyhedron.MakeBox([7,0],[9,2.1]), ["door2"])
 ts.AddPartition(
-        HPolyhedron.MakeBox([-2,0],[0,2]), ["key"])
+        HPolyhedron.MakeBox([9,0],[11,2]), ["goal"])
+ts.AddPartition(
+        HPolyhedron.MakeBox([-2,0],[0,2]), ["key1"])
+ts.AddPartition(
+        HPolyhedron.MakeBox([-2,8],[0,10]), ["key2"])
 
 ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
-spec = "(~door U key) & (F goal)"
+spec = "(~door1 U key1) & (~door2 U key2) & (F goal)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
 
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
-start_point = [1.0, 1.0]
+start_point = [4.0, 9.0]
 order = 5
-continuity = 1
+continuity = 2
 product_start_time = time.time()
 bgcs = ts.Product(dfa, start_point, order, continuity)
 product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(degree=1)
+bgcs.AddDerivativeCost(degree=1, weight=1.0)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
