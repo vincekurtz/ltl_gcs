@@ -15,9 +15,9 @@ class TestBsplineGcs(unittest.TestCase):
                    3 : HPolyhedron.MakeBox([2,2],[4,4])}
 
         bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 3, [1,1],
-                order=2)
+                order=2, continuity=0)
         bgcs.PlotScenario()
-        plt.show(block=False)  # use block=True to see the plot
+        plt.show(block=True)  # use block=True to see the plot
 
     def test_solve_shortest_path(self):
         vertices = [0,1,2,3,4,5,6]

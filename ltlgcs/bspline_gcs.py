@@ -74,11 +74,11 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         self.dummy_path_u = BsplineTrajectory_[Expression](
                 BsplineBasis_[Expression](self.order+1, self.order+1, 
                     KnotVectorType.kClampedUniform, 0, 1),
-                self.dummy_xu)
+                self.dummy_xu.T)
         self.dummy_path_v = BsplineTrajectory_[Expression](
                 BsplineBasis_[Expression](self.order+1, self.order+1, 
                     KnotVectorType.kClampedUniform, 0, 1),
-                self.dummy_xv)
+                self.dummy_xv.T)
 
         # Create the GCS problem
         self.gcs = GraphOfConvexSets()
@@ -291,7 +291,7 @@ class BSplineGraphOfConvexSets(DirectedGraph):
                 control_points = xu.reshape(self.order+1, -1)
                 basis = BsplineBasis(self.order+1, self.order+1, 
                                      KnotVectorType.kClampedUniform, 0, 1)
-                path = BsplineTrajectory(basis, control_points)
+                path = BsplineTrajectory(basis, control_points.T)
                 
                 if plot_control_points:
                     plt.plot(control_points[:,0], control_points[:,1], 'o--',
