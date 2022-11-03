@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 from pydrake.geometry.optimization import HPolyhedron
 
-
 # Construct a labeled transition system based on a simple grid
 nx, ny = (4, 4)
 ts = TransitionSystem(2)
@@ -18,9 +17,9 @@ for x in range(nx):
 
         # Associate partitions with labels
         labels=[]
-        if (x,y) == (2,2):
+        if (x,y) == (2,3):
             labels.append("goal")
-        elif (x,y) == (1,1):
+        elif 1<=x and x<=2 and 1<=y and y<=2:
             labels.append("obs")
 
         ts.AddPartition(partition, labels)
@@ -42,13 +41,13 @@ bgcs = ts.Product(dfa, start_point, order, continuity)
 product_time = time.time() - product_start_time
 
 # Solve the planning problem
-bgcs.AddLengthCost(norm="L1")
+bgcs.AddLengthCost(norm="L2")
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
-        convex_relaxation=False,
+        convex_relaxation=True,
         preprocessing=True,
         verbose=True,
-        max_rounded_paths=1,
+        max_rounded_paths=10,
         solver="mosek")
 solve_time = time.time() - solve_start_time
 
