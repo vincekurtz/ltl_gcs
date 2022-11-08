@@ -74,6 +74,9 @@ if res.is_success():
     print("    Total          : ", dfa_time + product_time + solve_time)
     print("")
 
+    print("GCS vertices: ", bgcs.nv())
+    print("GCS edges: ", bgcs.ne())
+
     plt.show()
 else:
     print("Optimization failed!")

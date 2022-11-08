@@ -7,42 +7,85 @@ import matplotlib.pyplot as plt
 
 from pydrake.geometry.optimization import HPolyhedron
 
+##
+#
+# A reach-avoid scenario based on an example in Shoukry et al., "SMC:
+# Satisfiability Modulo Convex Programming"
+#
+##
+
 # Construct a labeled transition system based on a simple grid
-nx, ny = (3, 3)
 ts = TransitionSystem(2)
 
-for x in range(nx):
-    for y in range(ny):
-        partition = HPolyhedron.MakeBox([x,y],[x+1,y+1])
+#ts.AddPartition(
+#        HPolyhedron.MakeBox([2,0],[3,6]), 
+#        ["o"])
+#ts.AddPartition(
+#        HPolyhedron.MakeBox([0,8],[3,9]), 
+#        ["o"])
+#ts.AddPartition(
+#        HPolyhedron.MakeBox([4,9],[5,13]), 
+#        ["o"])
+#ts.AddPartition(
+#        HPolyhedron.MakeBox([6,1],[7,12]), 
+#        ["o"])
+#ts.AddPartition(
+#        HPolyhedron.MakeBox([8,6],[12,7]), 
+#        ["o"])
+ts.AddPartition(
+        HPolyhedron.MakeBox([0,0],[2,8]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([2,6],[3,8]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([3,0],[6,9]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([0,9],[4,13]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([5,9],[6,13]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([7,7],[12,13]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([7,0],[12,6]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([6,0],[7,1]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([7,6],[8,7]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([6,12],[7,13]), 
+        [])
+ts.AddPartition(
+        HPolyhedron.MakeBox([11,5],[11.1,5.1]), 
+        ["g"])
 
-        # Associate partitions with labels
-        labels=[]
-        if (x,y) == (2,2):
-            labels.append("goal")
-        elif 1<=x and x<=2 and 1<=y and y<2:
-            labels.append("obs")
-
-        ts.AddPartition(partition, labels)
 ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
-spec = "~obs U goal"
+spec = "~o U g"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
 
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
-start_point = [2.5, 0.7]
-order = 2
-continuity = 1
+start_point = [1.5, 2.0]
+order = 5
+continuity = 2
 product_start_time = time.time()
 bgcs = ts.Product(dfa, start_point, order, continuity)
 product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(norm="L2", degree=1, weight=0.5)
+bgcs.AddDerivativeCost(norm="L2", degree=1, weight=0.1)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
