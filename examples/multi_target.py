@@ -7,40 +7,55 @@ import matplotlib.pyplot as plt
 
 from pydrake.geometry.optimization import HPolyhedron
 
-# Construct a labeled transition system based on a simple grid
-nx, ny = (3, 3)
+##
+#
+# A robot must visit several targets of various types
+#
+##
+
+np.random.seed(0)
+groups = ["a","b","c","d","e"]
+targets_per_group = 2
+
+# Construct the labeled transition system
+print("Constructing Transition System")
 ts = TransitionSystem(2)
 
-for x in range(nx):
-    for y in range(ny):
-        partition = HPolyhedron.MakeBox([x,y],[x+1,y+1])
+ts.AddPartition(
+        HPolyhedron.MakeBox([0,0],[10,10]), [])
 
-        # Associate partitions with labels
-        labels=[]
-        if (x,y) == (2,2):
-            labels.append("goal")
-        elif 1<=x and x<=2 and 1<=y and y<2:
-            labels.append("obs")
+for g in groups:
+    for j in range(targets_per_group):
+        x = np.random.uniform(0,9)
+        y = np.random.uniform(0,9)
 
-        ts.AddPartition(partition, labels)
+        ts.AddPartition(
+                HPolyhedron.MakeBox([x,y],[x+1,y+1]), [g])
+
 ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
-spec = "~obs U goal"
+print("Converting Specification to DFA")
+spec = f"True"    # (F a) & (F b) & ...
+for g in groups:
+    spec += f" & (F {g})"
+
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
 
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
-start_point = [2.5, 0.7]
-order = 2
+print("Constructing GCS problem")
+start_point = [5.0, 2.0]
+order = 3
 continuity = 1
 product_start_time = time.time()
 bgcs = ts.Product(dfa, start_point, order, continuity)
 product_time = time.time() - product_start_time
 
 # Solve the planning problem
+print("Solving GCS problem")
 bgcs.AddLengthCost(norm="L2")
 bgcs.AddDerivativeCost(norm="L2", degree=1, weight=0.5)
 solve_start_time = time.time()

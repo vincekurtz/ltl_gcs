@@ -17,7 +17,7 @@ from pydrake.geometry.optimization import HPolyhedron
 ts = TransitionSystem(2)
 
 ts.AddPartition(
-        HPolyhedron.MakeBox([0,0],[5,10]), [])
+        HPolyhedron.MakeBox([-2,0],[5,10]), [])
 ts.AddPartition(
         HPolyhedron.MakeBox([5,4],[7,6]), ["door1"])
 ts.AddPartition(
@@ -42,7 +42,7 @@ dfa_time = time.time() - dfa_start_time
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
 start_point = [4.0, 9.0]
-order = 5
+order = 3
 continuity = 2
 product_start_time = time.time()
 bgcs = ts.Product(dfa, start_point, order, continuity)
@@ -50,7 +50,7 @@ product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(degree=1, weight=1.0)
+bgcs.AddDerivativeCost(degree=1, weight=0.5)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
