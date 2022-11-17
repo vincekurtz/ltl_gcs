@@ -178,7 +178,7 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         # Define source and target vertices
         source = gcs_verts[self.start_vertex]
         target = gcs_verts[self.end_vertex]
-        
+
         # Add continuity constraints. This includes both continuity (first and
         # last control points line up) and smoothness (first and last control
         # points of derivatives of the path line up).
@@ -206,6 +206,9 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         # Add initial condition constraint
         for i in range(self.dim):
             source.AddConstraint(source.x()[i] == self.start_point[i])
+
+        # Allow access to GCS vertices later
+        self.gcs_verts = gcs_verts
 
         return (source, target)
 
