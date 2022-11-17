@@ -2,7 +2,11 @@ import unittest
 
 from ltlgcs.bspline_gcs import BSplineGraphOfConvexSets
 
-from pydrake.geometry.optimization import HPolyhedron
+from pydrake.geometry.optimization import HPolyhedron, VPolytope
+
+import numpy as np
+from scipy.spatial import ConvexHull
+from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
 
 class TestBsplineGcs(unittest.TestCase):
@@ -66,10 +70,9 @@ class TestBsplineGcs(unittest.TestCase):
         # First GCS takes us to an accepting state
         edges = [(0,1), (1,10)]
         bgcs1 = BSplineGraphOfConvexSets(vertices, edges, regions, 0, 10,
-                [0.5,0.5], order=3, continuity=2)
-        #bgcs1.AddLengthCost(norm="L2")
-        #bgcs1.AddDerivativeCost(1, weight=1.0, norm="L2")
-        bgcs1.AddDerivativeCost(2, weight=1.0, norm="L2")
+                [0.5,1.0], order=4, continuity=2)
+        bgcs1.AddLengthCost()
+        bgcs1.AddDerivativeCost(1)
         res1 = bgcs1.SolveShortestPath(verbose=True, convex_relaxation=False)
         self.assertTrue(res1.is_success())
 
@@ -77,7 +80,7 @@ class TestBsplineGcs(unittest.TestCase):
         x_loop = res1.GetSolution(bgcs1.gcs_verts[1].x())
         edges = [(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(6,10)]
         bgcs2 = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 10,
-                [x_loop[0],x_loop[1]], order=3, continuity=1)
+                [x_loop[0],x_loop[1]], order=4, continuity=2)
 
         loop_start = bgcs2.gcs_verts[1]
         loop_end = bgcs2.gcs_verts[6]
@@ -86,13 +89,40 @@ class TestBsplineGcs(unittest.TestCase):
             loop_end.AddConstraint(loop_end.x()[i] == x_loop[i])
             loop_start.AddConstraint(loop_start.x()[i] == x_loop[i])
 
-        bgcs2.AddDerivativeCost(1, weight=1.0, norm="L2")
+        bgcs2.AddLengthCost()
+        bgcs2.AddDerivativeCost(1)
+        bgcs2.AddDerivativeCost(2)
 
         res2 = bgcs2.SolveShortestPath(verbose=True, convex_relaxation=False)
         self.assertTrue(res2.is_success())
 
-        # Make some plots
-        bgcs1.PlotScenario()
+        # Plot the scenario
+        for region in (p0, p1, p2, p3):
+            v = VPolytope(region).vertices().T
+            hull = ConvexHull(v)
+            v_sorted = np.vstack([v[hull.vertices,0], v[hull.vertices,1]]).T
+
+            poly = Polygon(v_sorted, alpha=0.5, edgecolor='k', linewidth=3)
+            plt.gca().add_patch(poly)
+
+            if region == p1:
+                label = "a"
+            elif region == p3:
+                label = "b"
+            else:
+                label = ""
+
+            center_point = region.ChebyshevCenter()
+            plt.text(center_point[0], center_point[1],
+                    label,
+                    horizontalalignment='center',
+                    verticalalignment='center',
+                    fontsize=12, color='black')
+
+
+        plt.axis('equal')
+
+        # Plot the solution
         bgcs1.PlotSolution(res1, plot_control_points=True, plot_path=True)
         bgcs2.PlotSolution(res2, plot_control_points=True, plot_path=True)
         plt.show()
