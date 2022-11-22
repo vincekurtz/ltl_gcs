@@ -1,6 +1,6 @@
 from ltlgcs.graph import DirectedGraph
 from ltlgcs.dfa import DeterministicFiniteAutomaton
-from ltlgcs.bspline_gcs import BSplineGraphOfConvexSets
+from ltlgcs.bezier_gcs import BezierGraphOfConvexSets
 
 from pydrake.all import *
 
@@ -131,7 +131,7 @@ class TransitionSystem(DirectedGraph):
     def Product(self, dfa, start_point, order, continuity):
         """
         Compute the product of this transition system and a Deterministic Finite
-        Automaton (DFA), which is a B-spline graph of convex sets. 
+        Automaton (DFA), which is a Bezier curve graph of convex sets. 
 
         Args:
             dfa: Deterministic Finite Automaton corresponding to some LTL
@@ -143,7 +143,7 @@ class TransitionSystem(DirectedGraph):
                    through the graph of convex sets
 
         Returns:
-            gcs: BSplineGraphOfConvexSets such that any path through the graph
+            gcs: BezierGraphOfConvexSets such that any path through the graph
                  corresponds to a path through this transition system that satisfies
                  the LTL specification defined by the given DFA. 
         """
@@ -220,7 +220,7 @@ class TransitionSystem(DirectedGraph):
         regions[end_vertex] = HPolyhedron.MakeBox([0,0],[0,0])
 
         # Construct and return the graph of convex sets
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, start_vertex,
+        bgcs = BezierGraphOfConvexSets(vertices, edges, regions, start_vertex,
                 end_vertex, start_point, order, continuity)
 
         return bgcs

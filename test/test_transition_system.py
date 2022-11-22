@@ -42,8 +42,7 @@ class TestTransitionSystem(unittest.TestCase):
         ts.AddEdge(vertex_one, vertex_two)
 
         ts.visualize()
-
-        plt.show()
+        plt.show(block=False)  # use block=True to see the plot
 
     def test_satisfies(self):
         self.assertTrue(satisfies(["a"], "a | b"))
@@ -78,10 +77,9 @@ class TestTransitionSystem(unittest.TestCase):
 
         # Set up a toy specification
         string = "(~b U c) & (F b)"
-        #string = "a U c"
         dfa = DeterministicFiniteAutomaton(string)
 
-        # Create a B-spline Graph of Convex sets as the product of the
+        # Create a Bezier Graph of Convex sets as the product of the
         # transition system and the specification.
         start_point = [0.5, 0.2]
         order = 3
@@ -90,17 +88,15 @@ class TestTransitionSystem(unittest.TestCase):
 
         # Solve a path planning problem on this graph
         bgcs.AddLengthCost(norm="L2")
-        #bgcs.AddDerivativeCost(degree=1, weight=0.1)
+        bgcs.AddDerivativeCost(degree=1, weight=0.1)
         res = bgcs.SolveShortestPath(
                 convex_relaxation=True,
                 preprocessing=True,
-                verbose=True,
+                verbose=False,
                 max_rounded_paths=10)
-        #self.assertTrue(res.is_success())
+        self.assertTrue(res.is_success())
 
         ts.visualize()
         bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
-        bgcs.visualize()
-        plt.show()
-
+        plt.show(block=False)  # use block=True to see the plot
 

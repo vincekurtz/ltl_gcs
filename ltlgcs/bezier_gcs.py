@@ -7,19 +7,19 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from scipy.spatial import ConvexHull
 
-class BSplineGraphOfConvexSets(DirectedGraph):
+class BezierGraphOfConvexSets(DirectedGraph):
     """
-    Problem setup and solver for planning a B-Spline trajectory through a graph
-    of convex sets. The graph setup is as follows:
+    Problem setup and solver for planning a piecewise bezier curve trajectory
+    through a graph of convex sets. The graph setup is as follows:
 
         - Each vertex is associated with a convex set
         - Each convex set contains a Bezier curve
-        - The optimal path is a B-spline made up of Bezier curves. These curves
+        - The optimal path is a sequence of Bezier curves. These curves
           must line up with each other. 
         - The goal is to find a (minimum cost) trajectory from a given starting
           point to the target vertex
         - The target vertex is not associated with any constraints on the
-          B-splines: it just indicates that the task is complete.
+          curve: it just indicates that the task is complete.
     """
     def __init__(self, vertices, edges, regions, start_vertex, end_vertex,
                  start_point, order=2, continuity=1):
@@ -58,12 +58,12 @@ class BSplineGraphOfConvexSets(DirectedGraph):
         self.start_vertex = start_vertex
         self.end_vertex = end_vertex
        
-        # B-splines can guarantee continuity of n-1 derivatives
+        # Bezier curves can guarantee continuity of n-1 derivatives
         assert continuity < order
         self.order = order
         self.continuity = continuity
 
-        # Create "dummy" symbolic bsplines for an arbitrary edge. This allows us
+        # Create "dummy" symbolic curves for an arbitrary edge. This allows us
         # to derive expressions for various things, such as derivatives of the
         # spline, in terms of the original control points (decision variables)
         self.dummy_xu = MakeMatrixContinuousVariable(self.order+1, self.dim, "xu")

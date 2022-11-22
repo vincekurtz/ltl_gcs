@@ -1,6 +1,6 @@
 import unittest
 
-from ltlgcs.bspline_gcs import BSplineGraphOfConvexSets
+from ltlgcs.bezier_gcs import BezierGraphOfConvexSets
 
 from pydrake.geometry.optimization import HPolyhedron, VPolytope
 
@@ -9,7 +9,7 @@ from scipy.spatial import ConvexHull
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
 
-class TestBsplineGcs(unittest.TestCase):
+class TestBezierGcs(unittest.TestCase):
     def test_scenario_plot(self):
         vertices = [1,2,3]
         edges = [(1,2), (2,3)]
@@ -18,10 +18,10 @@ class TestBsplineGcs(unittest.TestCase):
                    2 : HPolyhedron.MakeBox([0,2],[2,4]),
                    3 : HPolyhedron.MakeBox([2,2],[4,4])}
 
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 3, [1,1],
+        bgcs = BezierGraphOfConvexSets(vertices, edges, regions, 1, 3, [1,1],
                 order=2, continuity=0)
         bgcs.PlotScenario()
-        plt.show(block=True)  # use block=True to see the plot
+        plt.show(block=False)  # use block=True to see the plot
 
     def test_solve_shortest_path(self):
         vertices = [0,1,2,3,4,5,6]
@@ -40,16 +40,16 @@ class TestBsplineGcs(unittest.TestCase):
                    5 : HPolyhedron.MakeBox([5,0],[7,1]),
                    6 : HPolyhedron.MakeBox([0,0],[0,0])}  # target is irrelevant
         
-        bgcs = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 6,
+        bgcs = BezierGraphOfConvexSets(vertices, edges, regions, 1, 6,
                 [1.0,1.2], order=3, continuity=2)
         bgcs.AddLengthCost(norm="L2")
         bgcs.AddDerivativeCost(1, weight=0.1, norm="L2")
-        res = bgcs.SolveShortestPath(verbose=True)
+        res = bgcs.SolveShortestPath(verbose=False)
         self.assertTrue(res.is_success())
 
         bgcs.PlotScenario()
         bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
-        plt.show()
+        plt.show(block=False)  # use block=True to see the plot
 
     def test_kl_loop(self):
         # Define the regions in question
@@ -69,17 +69,17 @@ class TestBsplineGcs(unittest.TestCase):
 
         # First GCS takes us to an accepting state
         edges = [(0,1), (1,10)]
-        bgcs1 = BSplineGraphOfConvexSets(vertices, edges, regions, 0, 10,
+        bgcs1 = BezierGraphOfConvexSets(vertices, edges, regions, 0, 10,
                 [0.5,1.0], order=4, continuity=2)
         bgcs1.AddLengthCost()
         bgcs1.AddDerivativeCost(1)
-        res1 = bgcs1.SolveShortestPath(verbose=True, convex_relaxation=False)
+        res1 = bgcs1.SolveShortestPath(verbose=False, convex_relaxation=False)
         self.assertTrue(res1.is_success())
 
         # Second GCS finds a loop
         x_loop = res1.GetSolution(bgcs1.gcs_verts[1].x())
         edges = [(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(6,10)]
-        bgcs2 = BSplineGraphOfConvexSets(vertices, edges, regions, 1, 10,
+        bgcs2 = BezierGraphOfConvexSets(vertices, edges, regions, 1, 10,
                 [x_loop[0],x_loop[1]], order=4, continuity=2)
 
         loop_start = bgcs2.gcs_verts[1]
@@ -93,7 +93,7 @@ class TestBsplineGcs(unittest.TestCase):
         bgcs2.AddDerivativeCost(1)
         bgcs2.AddDerivativeCost(2)
 
-        res2 = bgcs2.SolveShortestPath(verbose=True, convex_relaxation=False)
+        res2 = bgcs2.SolveShortestPath(verbose=False, convex_relaxation=False)
         self.assertTrue(res2.is_success())
 
         # Plot the scenario
@@ -125,7 +125,5 @@ class TestBsplineGcs(unittest.TestCase):
         # Plot the solution
         bgcs1.PlotSolution(res1, plot_control_points=True, plot_path=True)
         bgcs2.PlotSolution(res2, plot_control_points=True, plot_path=True)
-        plt.show()
-
-
+        plt.show(block=False)  # use block=True to see the plot
 
