@@ -81,11 +81,12 @@ def generate_transition_system(num_partitions, label_dict, seed=0, xmax=15,
 
 # Create the scenario
 print("Constructing Transition System")
-ts = generate_transition_system(10, {"goal": 0.1, "obs": 0.6})
+label_probabilities = {"a":0.2, "b":0.2, "c":0.2, "obs":0.3}
+ts = generate_transition_system(25, label_probabilities)
 
 # Convert the specification to a DFA
 print("Converting to DFA")
-spec = "(F goal) & (G ~obs)"
+spec = "(F a) & (F b) & (F c) & (G ~obs)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
@@ -93,7 +94,7 @@ dfa_time = time.time() - dfa_start_time
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
 print("Constructing GCS")
-start_point = [4.0, 9.0]
+start_point = [10.0, 1.0]
 order = 3
 continuity = 2
 product_start_time = time.time()
