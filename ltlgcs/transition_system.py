@@ -217,7 +217,8 @@ class TransitionSystem(DirectedGraph):
         vertices.append(end_vertex)
 
         # TODO: eliminate need for this dummy region for the target state
-        regions[end_vertex] = HPolyhedron.MakeBox([0,0],[0,0])
+        zero = np.zeros(self.n)
+        regions[end_vertex] = HPolyhedron.MakeBox(zero,zero)
 
         # Construct and return the graph of convex sets
         bgcs = BezierGraphOfConvexSets(vertices, edges, regions, start_vertex,
