@@ -16,12 +16,16 @@ from pydrake.geometry.optimization import HPolyhedron, VPolytope
 #
 ##
 
-def generate_transition_system(num_partitions, seed=0, xmax=15, ymax=10):
+def generate_transition_system(num_partitions, label_dict, seed=0, xmax=15,
+        ymax=10):
     """
     Create a transition system with randomly generated polygonal partitions.
 
     Args:
         num_partitions: number of partitions to create
+        label_dict: dictionary of label probabilities. {"a":0.1} gives a 10%
+                    chance of assigning label "a" to each partition.
+        of "a" to each partition
         seed: seed for pseudorandom number generator
         xmax: size of the workspace in the horizontal direction
         ymax: size of the workspace in the vertical direction
@@ -59,15 +63,74 @@ def generate_transition_system(num_partitions, seed=0, xmax=15, ymax=10):
         vertex_indices = vor.regions[region_index]
         vertices = vor.vertices[vertex_indices]
 
+        # convert to halfspace representation
         vpoly = VPolytope(vertices.T)
         hpoly = vpoly_to_hpoly(vpoly)
 
-        ts.AddPartition(hpoly, [])
+        # randomly generate labels
+        labels = []
+        for label, probability in label_dict.items():
+            if np.random.uniform() < probability:
+                labels.append(label)
+
+        ts.AddPartition(hpoly, labels)
 
     ts.AddEdgesFromIntersections()
 
     return ts
 
-ts = generate_transition_system(10)
-ts.visualize() 
-plt.show()
+# Create the scenario
+print("Constructing Transition System")
+ts = generate_transition_system(10, {"goal": 0.1, "obs": 0.6})
+
+# Convert the specification to a DFA
+print("Converting to DFA")
+spec = "(F goal) & (G ~obs)"
+dfa_start_time = time.time()
+dfa = DeterministicFiniteAutomaton(spec)
+dfa_time = time.time() - dfa_start_time
+
+# Take the product of the DFA and the transition system to produce a graph of
+# convex sets
+print("Constructing GCS")
+start_point = [4.0, 9.0]
+order = 3
+continuity = 2
+product_start_time = time.time()
+bgcs = ts.Product(dfa, start_point, order, continuity)
+product_time = time.time() - product_start_time
+
+# Solve the planning problem
+print("Solving Shortest Path")
+bgcs.AddLengthCost(norm="L2")
+bgcs.AddDerivativeCost(degree=1, weight=0.5)
+solve_start_time = time.time()
+res = bgcs.SolveShortestPath(
+        convex_relaxation=True,
+        preprocessing=True,
+        verbose=True,
+        max_rounded_paths=10,
+        solver="mosek")
+solve_time = time.time() - solve_start_time
+
+if res.is_success():
+    # Plot the resulting trajectory
+    ts.visualize()
+    bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+    
+    # Print timing infos
+    print("\n")
+    print("Solve Times:")
+    print("    LTL --> DFA    : ", dfa_time)
+    print("    TS x DFA = GCS : ", product_time)
+    print("    GCS solve      : ", solve_time)
+    print("    Total          : ", dfa_time + product_time + solve_time)
+    print("")
+
+    print("GCS vertices: ", bgcs.nv())
+    print("GCS edges: ", bgcs.ne())
+
+    plt.show()
+else:
+    print("Optimization failed!")
+
