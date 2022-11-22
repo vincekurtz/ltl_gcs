@@ -2,6 +2,7 @@ from ltlgcs.graph import DirectedGraph
 
 from pydrake.all import *
 
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
@@ -134,7 +135,10 @@ class BezierGraphOfConvexSets(DirectedGraph):
 
         A = []
         for i in range(self.order - degree):
-            diff = deriv_control_points[i] - deriv_control_points[i+1]
+            with warnings.catch_warnings():
+                # ignore numpy warnings about subtracting symbolics
+                warnings.simplefilter('ignore', category=RuntimeWarning)
+                diff = deriv_control_points[i] - deriv_control_points[i+1]
             A.append(DecomposeLinearExpressions(diff.flatten(),
                         self.dummy_xu.flatten()))
 
@@ -187,8 +191,11 @@ class BezierGraphOfConvexSets(DirectedGraph):
             dummy_path_u_deriv = self.dummy_path_u.MakeDerivative(i)
             dummy_path_v_deriv = self.dummy_path_v.MakeDerivative(i)
 
-            continuity_err = dummy_path_v_deriv.control_points()[0] - \
-                             dummy_path_u_deriv.control_points()[-1]
+            with warnings.catch_warnings():
+                # ignore numpy warnings about subtracting symbolics
+                warnings.simplefilter('ignore', category=RuntimeWarning)
+                continuity_err = dummy_path_v_deriv.control_points()[0] - \
+                                 dummy_path_u_deriv.control_points()[-1]
 
             continuity_constraint = LinearEqualityConstraint(
                     DecomposeLinearExpressions(
