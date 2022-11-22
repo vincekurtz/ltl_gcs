@@ -81,12 +81,15 @@ def generate_transition_system(num_partitions, label_dict, seed=0, xmax=15,
 
 # Create the scenario
 print("Constructing Transition System")
-label_probabilities = {"a":0.2, "b":0.2, "c":0.2, "obs":0.3}
-ts = generate_transition_system(25, label_probabilities)
+label_probabilities = {"a":0.1, "b":0.1, "c":0.1, "d":0.1, "obs":0.3}
+ts = generate_transition_system(50, label_probabilities)
+
+ts.visualize()
+plt.show()
 
 # Convert the specification to a DFA
 print("Converting to DFA")
-spec = "(F a) & (F b) & (F c) & (G ~obs)"
+spec = "(F a) & (F b) & (F c) & (F d) & (G ~obs)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
@@ -94,7 +97,7 @@ dfa_time = time.time() - dfa_start_time
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
 print("Constructing GCS")
-start_point = [10.0, 1.0]
+start_point = [0.5, 8.5]
 order = 3
 continuity = 2
 product_start_time = time.time()
@@ -103,8 +106,8 @@ product_time = time.time() - product_start_time
 
 # Solve the planning problem
 print("Solving Shortest Path")
-bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(degree=1, weight=0.5)
+bgcs.AddLengthCost(norm="L1")
+bgcs.AddDerivativeCost(norm="L1", degree=1, weight=0.5)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
