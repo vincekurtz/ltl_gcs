@@ -73,7 +73,8 @@ def generate_transition_system(num_partitions, label_dict, seed=0, xmax=15,
             if np.random.uniform() < probability:
                 labels.append(label)
 
-        ts.AddPartition(hpoly, labels)
+        if "obs" not in labels:
+            ts.AddPartition(hpoly, labels)
 
     ts.AddEdgesFromIntersections()
 
