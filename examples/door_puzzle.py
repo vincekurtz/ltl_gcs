@@ -4,6 +4,7 @@ from ltlgcs.dfa import DeterministicFiniteAutomaton
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 
 from pydrake.geometry.optimization import HPolyhedron
 
@@ -19,6 +20,11 @@ from pydrake.geometry.optimization import HPolyhedron
 # near-optimal task and motion planning.", IJCAI 2018.
 #
 ##
+
+# Option for loading the DFA for the specification from a file rather than
+# generating it online. The conversion from LTL to DFA can be very slow,
+# especially for long specifications like this one. 
+load_dfa_from_file = True
 
 # Construct the labeled transition system
 ts = TransitionSystem(2)
@@ -67,17 +73,24 @@ ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
 print("Converting to DFA")
-spec = "(~d1 U k1) & (~d2 U k2) & (~d3 U k3) & (~d4 U k4) & (~d5 U k5) & (F goal)"
 dfa_start_time = time.time()
-dfa = DeterministicFiniteAutomaton(spec)
+if load_dfa_from_file:
+    with open("examples/door_puzzle_dfa.pkl", 'rb') as f:
+        dfa = pickle.load(f)
+else:
+    spec = "(~d1 U k1) & (~d2 U k2) & (~d3 U k3) & (~d4 U k4) & (~d5 U k5) & (F goal)"
+    dfa = DeterministicFiniteAutomaton(spec)
+
+    with open("examples/door_puzzle_dfa.pkl", 'wb') as f:
+        pickle.dump(dfa, f)
 dfa_time = time.time() - dfa_start_time
 
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
 print("Computing product GCS")
 start_point = [5.0, 2.5]
-order = 3
-continuity = 1
+order = 4
+continuity = 2
 product_start_time = time.time()
 bgcs = ts.Product(dfa, start_point, order, continuity)
 product_time = time.time() - product_start_time
@@ -85,7 +98,7 @@ product_time = time.time() - product_start_time
 # Solve the planning problem
 print("Solving Shortest Path")
 bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(degree=1, weight=0.5)
+bgcs.AddDerivativeCost(degree=1, weight=1.0)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
@@ -98,7 +111,7 @@ solve_time = time.time() - solve_start_time
 if res.is_success():
     # Plot the resulting trajectory
     ts.visualize()
-    bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+    bgcs.PlotSolution(res, plot_control_points=False, plot_path=True)
     
     # Print timing infos
     print("\n")
