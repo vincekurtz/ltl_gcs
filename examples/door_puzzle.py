@@ -110,8 +110,18 @@ solve_time = time.time() - solve_start_time
 
 if res.is_success():
     # Plot the resulting trajectory
-    ts.visualize()
+    color_dict={
+            "white": [[]],
+            "#2077B4": [["goal"]],
+            "#F14732": [["d1"],["d2"],["d3"],["d4"],["d5"]],
+            "#80BF80": [["k1"],["k2"],["k3"],["k4"],["k5"]]
+            }
+    ts.visualize(color_dict, background='black', edgewidth=0.0, alpha=1.0)
     bgcs.PlotSolution(res, plot_control_points=False, plot_path=True)
+    plt.xlim((-0.7,10.7))
+    plt.ylim((-0.7,10.7))
+    plt.gca().xaxis.set_visible(False)
+    plt.gca().yaxis.set_visible(False)
     
     # Print timing infos
     print("\n")
