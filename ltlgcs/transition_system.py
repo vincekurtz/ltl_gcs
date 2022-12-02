@@ -98,10 +98,21 @@ class TransitionSystem(DirectedGraph):
                 if r1.IntersectsWith(r2) and (v1 != v2):
                     self.AddEdge(v1, v2)
 
-    def visualize(self):
+    def visualize(self, color_dict={}, background='white', edgecolor='black',
+            edgewidth=3.0, alpha=0.5):
         """
         Make a pyplot visualization of the regions on the current pyplot axes. 
         Only supports 2D polytopes for now. 
+
+        Args:
+            color_dict: dictionary mapping color values to partition labels
+                        (list of predicates) that take the given color. If a
+                        partition does not have a color in this dictionary, it
+                        takes a default blue value. 
+            background: background color
+            edgecolor: edge color for each partition
+            edgewidth: width of the edge of each partition
+            alpha: opacity for each partition
         """
         for vertex in self.vertices:
             region = self.partitions[vertex]
@@ -114,7 +125,12 @@ class TransitionSystem(DirectedGraph):
             v_sorted = np.vstack([v[hull.vertices,0],v[hull.vertices,1]]).T
 
             # Make a polygonal patch
-            poly = Polygon(v_sorted, alpha=0.5, edgecolor="k", linewidth=3)
+            color = None
+            for c, labels in color_dict.items():
+                if label in labels:
+                    color = c
+            poly = Polygon(v_sorted, alpha=alpha, facecolor=color, 
+                           edgecolor=edgecolor, linewidth=edgewidth)
             plt.gca().add_patch(poly)
 
             # Add a text label showing the predicates that hold in this partion
@@ -125,8 +141,11 @@ class TransitionSystem(DirectedGraph):
                     verticalalignment='center',
                     fontsize=12, color='black')
 
-            # Use equal axes so square things look square
+        # Use equal axes so square things look square
         plt.axis('equal')
+
+        # Set the background color
+        plt.gca().set_facecolor(background)
 
     def Product(self, dfa, start_point, order, continuity):
         """
