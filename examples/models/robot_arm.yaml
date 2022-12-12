@@ -1,0 +1,64 @@
+directives:
+
+# Robot arm
+- add_model:
+    name: arm
+    file: package://drake/manipulation/models/franka_description/urdf/panda_arm_hand.urdf
+- add_weld:
+    parent: world
+    child: arm::panda_link0
+
+# Walls
+- add_model:
+    name: wall1
+    file: package://ltl_gcs/examples/models/wall.sdf
+- add_frame:
+    name: wall1::attach
+    X_PF:
+      base_frame: wall1::base
+      translation: [-0.55, 0.0, -0.5]
+      rotation: !Rpy { deg: [0.0, 0.0, 0.0 ]}
+- add_weld:
+    parent: world
+    child: wall1::attach
+
+- add_model:
+    name: wall2
+    file: package://ltl_gcs/examples/models/wall.sdf
+- add_frame:
+    name: wall2::attach
+    X_PF:
+      base_frame: wall2::base
+      translation: [-0.55, 0.3, -0.5]
+      rotation: !Rpy { deg: [0.0, 0.0, 90.0 ]}
+- add_weld:
+    parent: world
+    child: wall2::attach
+
+# Doorway
+- add_model:
+    name: door
+    file: package://ltl_gcs/examples/models/door.sdf
+- add_frame:
+    name: door::attach
+    X_PF:
+      base_frame: door::base
+      translation: [-0.55, -0.4, -0.25]
+      rotation: !Rpy { deg: [0.0, 0.0, 90.0 ]}
+- add_weld:
+    parent: world
+    child: door::attach
+
+# Button
+- add_model:
+    name: button
+    file: package://ltl_gcs/examples/models/button.sdf
+- add_frame:
+    name: button::attach
+    X_PF:
+      base_frame: button::base
+      translation: [0.6, 0.52, -0.15]
+- add_weld:
+    parent: world
+    child: button::attach
+    

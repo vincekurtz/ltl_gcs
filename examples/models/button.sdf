@@ -1,0 +1,28 @@
+<?xml version='1.0'?>
+<sdf version="1.4">
+  <model name="button">
+    <link name="base">
+      <inertial>
+        <mass>1.0</mass>
+        <inertia>
+          <ixx>0.01</ixx>
+          <iyy>0.01</iyy>
+          <izz>0.01</izz>
+          <ixy>0.0</ixy>
+          <iyz>0.0</iyz>
+          <ixz>0.0</ixz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <sphere>
+            <radius>0.05</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 0.5</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
