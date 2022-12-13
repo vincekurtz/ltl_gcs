@@ -3,7 +3,7 @@ directives:
 # Robot arm
 - add_model:
     name: arm
-    file: package://drake/manipulation/models/franka_description/urdf/panda_arm_hand.urdf
+    file: package://drake/manipulation/models/franka_description/urdf/panda_arm.urdf
 - add_weld:
     parent: world
     child: arm::panda_link0
@@ -57,8 +57,8 @@ directives:
     name: button::attach
     X_PF:
       base_frame: button::base
-      translation: [0.6, 0.52, -0.15]
+      translation: [0.6, 0.5, -0.25]
 - add_weld:
     parent: world
     child: button::attach
-    
+
