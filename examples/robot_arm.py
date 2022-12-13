@@ -94,13 +94,12 @@ ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
 spec = "(~door U button) & (F door)"
-#spec = "(F door)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
 
 # Take the product of the DFA and the transition system
-order = 3
+order = 5
 continuity = 1
 product_start_time = time.time()
 bgcs = ts.Product(dfa, q0, order, continuity)
@@ -143,5 +142,3 @@ if res.is_success():
             diagram.ForcedPublish(diagram_context)
             time.sleep(dt)
             t += dt
-    
-
