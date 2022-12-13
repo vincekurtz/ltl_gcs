@@ -11,19 +11,11 @@ import pickle
 ##
 
 # Several important configurations, could be defined via inverse dynamics
-q0 = np.array([-0.3, 0.5, -0.5, -2.1, 0., 2.3, 0.8])  # initial
-q1 = np.array([-0.4, 0.8, -0.7, -1.6, 0, 2.3, 0.8])   # door
-
+q0 = np.array([-0.3, 0.5, -0.5, -2.1, 0., 2.3, 0.8])     # initial
+q1 = np.array([-0.4, 0.8, -0.7, -1.6, 0, 2.3, 0.8])      # door
+q2 = np.array([-0.9, 0.4, -0.43, -2.6, 0.45, 2.2, 0.8])
 q3 = np.array([-1.5, 0.3, -0.35, -2.5, 0.9, 2.1, 0.8])
-q_button = np.array([-2.6, 0.9, 0, -1.3, 1.8, 1.9, 0.8])
-
-#q0 = np.array([0.0, -0.3, 0, -2.6, 0, 2.3, 0.8])
-#q_button = np.array([-2.6, 0.9, 0, -1.3, 1.8, 1.9, 0.8])
-#q_door = np.array([-0.6, 1.3, -1.0, -1.0, 0, 2.3, 0.8])
-
-q2 = np.array([-0.9, 0.4, -0.425, -2.6, 0.45, 2.2, 0.8])
-#q2 = 0.5*q0 + 0.5*q3
-#print(q2)
+q4 = np.array([-2.6, 0.9, 0, -1.3, 1.8, 1.9, 0.8])       # button
 
 # Create a MultibodyPlant model of the system
 builder = DiagramBuilder()
@@ -49,11 +41,14 @@ diagram_context = diagram.CreateDefaultContext()
 # and save the results. 
 perform_iris = False
 if perform_iris:
-    seeds = {"q2":q2, "q3":q3}
+    seeds = {"q0":q0, "q1":q1, "q2":q2, "q3":q3, "q4":q4}
     for name, configuration in seeds.items():
         plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
         plant.SetPositions(plant_context, configuration)
 
+        # N.B. we use pretty conservative IRIS options here, resulting in a
+        # significant underapproximation of the convex sets. This requires more
+        # sample points, but limits compute time. 
         iris_options = IrisOptions()
         iris_options.require_sample_point_is_contained = True
         iris_options.iteration_limit = 1
@@ -77,12 +72,13 @@ with open("examples/iris_region_q2.pkl", "rb") as f:
     q2_region = pickle.load(f)
 with open("examples/iris_region_q3.pkl", "rb") as f:
     q3_region = pickle.load(f)
-with open("examples/iris_region_q_button.pkl", "rb") as f:
-    q_button_region = pickle.load(f)
+with open("examples/iris_region_q4.pkl", "rb") as f:
+    q4_region = pickle.load(f)
 
+print(not q0_region.Intersection(q1_region).IsEmpty())
 print(not q0_region.Intersection(q2_region).IsEmpty())
 print(not q2_region.Intersection(q3_region).IsEmpty())
-print(not q3_region.Intersection(q_button_region).IsEmpty())
+print(not q3_region.Intersection(q4_region).IsEmpty())
 
 # Simulate the system
 plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
