@@ -94,6 +94,7 @@ ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
 spec = "(~door U button) & (F door)"
+#spec = "(F door)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
@@ -106,7 +107,7 @@ bgcs = ts.Product(dfa, q0, order, continuity)
 product_time = time.time() - product_start_time
 
 # Solve the planning problem
-bgcs.AddLengthCost()
+bgcs.AddLengthCost(norm="L2_squared")
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
@@ -130,13 +131,17 @@ if res.is_success():
     print("GCS edges: ", bgcs.ne())
 
     # Play back the trajectory
-    
-
-    # Simulate the system
     plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
-    plant.SetPositions(plant_context, q2)
-
-    simulator = Simulator(diagram, diagram_context)
-    simulator.set_target_realtime_rate(1.0)
-    simulator.AdvanceTo(1e-4)
+    dt = 0.02
+    t = 0
+    path = bgcs.ExtractSolution(res)
+    for segment in path:
+        for s in np.linspace(0,1,50):
+            q = segment.value(s)
+            plant.SetPositions(plant_context, q)
+            diagram_context.SetTime(t)
+            diagram.ForcedPublish(diagram_context)
+            time.sleep(dt)
+            t += dt
+    
 
