@@ -46,6 +46,9 @@ class TestBezierGcs(unittest.TestCase):
         bgcs.AddDerivativeCost(1, weight=0.1, norm="L2")
         res = bgcs.SolveShortestPath(verbose=False)
         self.assertTrue(res.is_success())
+        
+        curves = bgcs.ExtractSolution(res)
+        self.assertTrue(len(curves) == 4)
 
         bgcs.PlotScenario()
         bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)

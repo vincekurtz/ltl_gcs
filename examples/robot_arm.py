@@ -3,6 +3,9 @@ import numpy as np
 import time
 import pickle
 
+from ltlgcs.transition_system import TransitionSystem
+from ltlgcs.dfa import DeterministicFiniteAutomaton
+
 ##
 #
 # A temporal logic motion planning example for a high-DoF robot arm. The robot
@@ -64,6 +67,7 @@ if perform_iris:
         with open(f"examples/iris_region_{name}.pkl", "wb") as f:
             pickle.dump(hpoly,f)
 
+# Load saved convex decomposition of free space
 with open("examples/iris_region_q0.pkl", "rb") as f:
     q0_region = pickle.load(f)
 with open("examples/iris_region_q1.pkl", "rb") as f:
@@ -75,16 +79,64 @@ with open("examples/iris_region_q3.pkl", "rb") as f:
 with open("examples/iris_region_q4.pkl", "rb") as f:
     q4_region = pickle.load(f)
 
-print(not q0_region.Intersection(q1_region).IsEmpty())
-print(not q0_region.Intersection(q2_region).IsEmpty())
-print(not q2_region.Intersection(q3_region).IsEmpty())
-print(not q3_region.Intersection(q4_region).IsEmpty())
+# Construct a labeled transition system
+ts = TransitionSystem(7)
+ts.AddPartition(q0_region, [])
+ts.AddPartition(q1_region, [])
+ts.AddPartition(q2_region, [])
+ts.AddPartition(q3_region, [])
+ts.AddPartition(q4_region, [])
+ts.AddPartition(
+        HPolyhedron.MakeBox(q1,q1), ["door"])
+ts.AddPartition(
+        HPolyhedron.MakeBox(q4,q4), ["button"])
+ts.AddEdgesFromIntersections()
 
-# Simulate the system
-plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
-plant.SetPositions(plant_context, q2)
+# Convert the specification to a DFA
+spec = "(~door U button) & (F door)"
+dfa_start_time = time.time()
+dfa = DeterministicFiniteAutomaton(spec)
+dfa_time = time.time() - dfa_start_time
 
-simulator = Simulator(diagram, diagram_context)
-simulator.set_target_realtime_rate(1.0)
-simulator.AdvanceTo(1e-4)
+# Take the product of the DFA and the transition system
+order = 3
+continuity = 1
+product_start_time = time.time()
+bgcs = ts.Product(dfa, q0, order, continuity)
+product_time = time.time() - product_start_time
+
+# Solve the planning problem
+bgcs.AddLengthCost()
+solve_start_time = time.time()
+res = bgcs.SolveShortestPath(
+        convex_relaxation=True,
+        preprocessing=True,
+        verbose=True,
+        max_rounded_paths=10,
+        solver="mosek")
+solve_time = time.time() - solve_start_time
+
+if res.is_success():
+    # Print timing infos
+    print("\n")
+    print("Solve Times:")
+    print("    LTL --> DFA    : ", dfa_time)
+    print("    TS x DFA = GCS : ", product_time)
+    print("    GCS solve      : ", solve_time)
+    print("    Total          : ", dfa_time + product_time + solve_time)
+    print("")
+
+    print("GCS vertices: ", bgcs.nv())
+    print("GCS edges: ", bgcs.ne())
+
+    # Play back the trajectory
+    
+
+    # Simulate the system
+    plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
+    plant.SetPositions(plant_context, q2)
+
+    simulator = Simulator(diagram, diagram_context)
+    simulator.set_target_realtime_rate(1.0)
+    simulator.AdvanceTo(1e-4)
 

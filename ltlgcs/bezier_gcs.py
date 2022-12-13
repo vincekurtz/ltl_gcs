@@ -280,6 +280,48 @@ class BezierGraphOfConvexSets(DirectedGraph):
         # Use equal axes so square things look square
         plt.axis('equal')
 
+    def ExtractSolution(self, result):
+        """
+        Extract a sequence of bezier curves representing the optimal solution.
+
+        Args:
+            result: MathematicalProgramResult from calling SolveShortestPath
+
+        Returns:
+            A list of BsplineTrajectory objects representing each segement of
+            the optimal solution.
+        """
+        # List of bezier curves that we'll return
+        curves = []
+
+        def get_outgoing_edge(vertex):
+            # Helper function that returns the highest probability (phi-value)
+            # edge leading out of the given vertex
+            edge = None
+            phi = -1.0
+            for e in self.gcs.Edges():
+                if (e.u() == vertex) and result.GetSolution(e.phi()) > phi:
+                    edge = e
+                    phi = result.GetSolution(e.phi())
+            return edge
+     
+        # Traverse the graph along the optimal path
+        v = self.gcs_verts[self.start_vertex]
+        while v != self.gcs_verts[self.end_vertex]:
+            e = get_outgoing_edge(v)
+           
+            # Get the control points for this vertex
+            xu = result.GetSolution(e.xu())
+            control_points = xu.reshape(self.order+1, -1)
+            basis = BsplineBasis(self.order+1, self.order+1, 
+                                 KnotVectorType.kClampedUniform, 0, 1)
+            curves.append(BsplineTrajectory(basis, control_points.T))
+
+            # move to the next vertex
+            v = e.v()
+
+        return curves
+
     def PlotSolution(self, result, plot_control_points=True, plot_path=True):
         """
         Add a plot of the solution to the current matplotlib axes. Only
