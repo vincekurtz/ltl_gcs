@@ -11,13 +11,19 @@ import pickle
 ##
 
 # Several important configurations, could be defined via inverse dynamics
-q0 = np.array([0.0, -0.3, 0, -2.6, 0, 2.3, 0.8])
-q_button = np.array([-2.6, 0.9, 0, -1.3, 1.8, 1.9, 0.8])
-q_door = np.array([-0.6, 1.3, -1.0, -1.0, 0, 2.3, 0.8])
+q0 = np.array([-0.3, 0.5, -0.5, -2.1, 0., 2.3, 0.8])  # initial
+q1 = np.array([-0.4, 0.8, -0.7, -1.6, 0, 2.3, 0.8])   # door
 
-q1 = np.array([-0.4, 0.8, -0.7, -1.6, 0, 2.3, 0.8])
-#q1 = 0.67*q_door + 0.33*q0
-#print(q1)
+q3 = np.array([-1.5, 0.3, -0.35, -2.5, 0.9, 2.1, 0.8])
+q_button = np.array([-2.6, 0.9, 0, -1.3, 1.8, 1.9, 0.8])
+
+#q0 = np.array([0.0, -0.3, 0, -2.6, 0, 2.3, 0.8])
+#q_button = np.array([-2.6, 0.9, 0, -1.3, 1.8, 1.9, 0.8])
+#q_door = np.array([-0.6, 1.3, -1.0, -1.0, 0, 2.3, 0.8])
+
+q2 = np.array([-0.9, 0.4, -0.425, -2.6, 0.45, 2.2, 0.8])
+#q2 = 0.5*q0 + 0.5*q3
+#print(q2)
 
 # Create a MultibodyPlant model of the system
 builder = DiagramBuilder()
@@ -41,10 +47,9 @@ diagram_context = diagram.CreateDefaultContext()
 
 # Construct convex sets using IRIS. This can be quite slow, so we do it offline
 # and save the results. 
-perform_iris = True
+perform_iris = False
 if perform_iris:
-    #seeds = {"q0":q0, "q_button":q_button, "q_door":q_door}
-    seeds = {"q1":q1}
+    seeds = {"q2":q2, "q3":q3}
     for name, configuration in seeds.items():
         plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
         plant.SetPositions(plant_context, configuration)
@@ -68,19 +73,20 @@ with open("examples/iris_region_q0.pkl", "rb") as f:
     q0_region = pickle.load(f)
 with open("examples/iris_region_q1.pkl", "rb") as f:
     q1_region = pickle.load(f)
+with open("examples/iris_region_q2.pkl", "rb") as f:
+    q2_region = pickle.load(f)
+with open("examples/iris_region_q3.pkl", "rb") as f:
+    q3_region = pickle.load(f)
 with open("examples/iris_region_q_button.pkl", "rb") as f:
     q_button_region = pickle.load(f)
-with open("examples/iris_region_q_door.pkl", "rb") as f:
-    q_door_region = pickle.load(f)
 
-print(q0_region.Intersection(q1_region).IsEmpty())
-print(q1_region.Intersection(q_door_region).IsEmpty())
-
-
+print(not q0_region.Intersection(q2_region).IsEmpty())
+print(not q2_region.Intersection(q3_region).IsEmpty())
+print(not q3_region.Intersection(q_button_region).IsEmpty())
 
 # Simulate the system
 plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
-plant.SetPositions(plant_context, q1)
+plant.SetPositions(plant_context, q2)
 
 simulator = Simulator(diagram, diagram_context)
 simulator.set_target_realtime_rate(1.0)
