@@ -82,18 +82,18 @@ with open("examples/iris_region_q4.pkl", "rb") as f:
 # Construct a labeled transition system
 ts = TransitionSystem(7)
 ts.AddPartition(q0_region, [])
-ts.AddPartition(q1_region, [])
+ts.AddPartition(q1_region, ["door"])
 ts.AddPartition(q2_region, [])
 ts.AddPartition(q3_region, [])
 ts.AddPartition(q4_region, [])
 ts.AddPartition(
-        HPolyhedron.MakeBox(q1,q1), ["door"])
+        HPolyhedron.MakeBox(q1,q1), ["target"])
 ts.AddPartition(
         HPolyhedron.MakeBox(q4,q4), ["button"])
 ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
-spec = "(~door U button) & (F door)"
+spec = "(~door U button) & (F target)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
