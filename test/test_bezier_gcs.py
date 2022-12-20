@@ -105,7 +105,7 @@ class TestBezierGcs(unittest.TestCase):
             hull = ConvexHull(v)
             v_sorted = np.vstack([v[hull.vertices,0], v[hull.vertices,1]]).T
 
-            poly = Polygon(v_sorted, alpha=0.5, edgecolor='k', linewidth=3)
+            poly = Polygon(v_sorted, facecolor='white', edgecolor='k', linewidth=1)
             plt.gca().add_patch(poly)
 
             if region == p1:
@@ -123,10 +123,14 @@ class TestBezierGcs(unittest.TestCase):
                     fontsize=12, color='black')
 
 
+        
+        plt.gca().xaxis.set_visible(False)
+        plt.gca().yaxis.set_visible(False)
+        plt.gca().set_facecolor('black')
         plt.axis('equal')
 
         # Plot the solution
         bgcs1.PlotSolution(res1, plot_control_points=True, plot_path=True)
         bgcs2.PlotSolution(res2, plot_control_points=True, plot_path=True)
-        plt.show(block=False)  # use block=True to see the plot
+        plt.show(block=True)  # use block=True to see the plot
 

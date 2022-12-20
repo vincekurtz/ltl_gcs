@@ -84,7 +84,10 @@ solve_time = time.time() - solve_start_time
 
 if res.is_success():
     # Plot the resulting trajectory
-    ts.visualize()
+    color_dict = {
+            "#2077B4" : [["a"]],
+            "#80BF80" : [["b"]]}
+    ts.visualize(color_dict)
     bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
     plt.gca().xaxis.set_visible(False)
     plt.gca().yaxis.set_visible(False)

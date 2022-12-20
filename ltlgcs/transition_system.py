@@ -98,8 +98,8 @@ class TransitionSystem(DirectedGraph):
                 if r1.IntersectsWith(r2) and (v1 != v2):
                     self.AddEdge(v1, v2)
 
-    def visualize(self, color_dict={}, background='white', edgecolor='black',
-            edgewidth=3.0, alpha=0.5):
+    def visualize(self, color_dict={}, background='black', edgecolor='black',
+            edgewidth=1.0, alpha=1.0):
         """
         Make a pyplot visualization of the regions on the current pyplot axes. 
         Only supports 2D polytopes for now. 
@@ -125,7 +125,7 @@ class TransitionSystem(DirectedGraph):
             v_sorted = np.vstack([v[hull.vertices,0],v[hull.vertices,1]]).T
 
             # Make a polygonal patch
-            color = None
+            color = 'white'
             for c, labels in color_dict.items():
                 if label in labels:
                     color = c
