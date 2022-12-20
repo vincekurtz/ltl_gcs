@@ -89,7 +89,7 @@ bgcs.AddDerivativeCost(norm="L2", degree=1, weight=0.1)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
-        preprocessing=False,
+        preprocessing=True,
         verbose=True,
         max_rounded_paths=10,
         solver="mosek")

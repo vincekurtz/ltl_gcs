@@ -85,9 +85,6 @@ print("Constructing Transition System")
 label_probabilities = {"a":0.1, "b":0.1, "c":0.1, "d":0.1, "obs":0.3}
 ts = generate_transition_system(50, label_probabilities)
 
-ts.visualize()
-plt.show()
-
 # Convert the specification to a DFA
 print("Converting to DFA")
 spec = "(F a) & (F b) & (F c) & (F d) & (G ~obs)"
@@ -120,8 +117,11 @@ solve_time = time.time() - solve_start_time
 
 if res.is_success():
     # Plot the resulting trajectory
-    ts.visualize()
+    color_dict={"white":[[],["a"],["b"],["c"],["d"],["b","d"],["c","d"]]}
+    ts.visualize(color_dict, background='black', edgewidth=0.5, alpha=1.0)
     bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+    plt.gca().xaxis.set_visible(False)
+    plt.gca().yaxis.set_visible(False)
     
     # Print timing infos
     print("\n")
