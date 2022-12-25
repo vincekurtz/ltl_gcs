@@ -87,7 +87,7 @@ ts = generate_transition_system(50, label_probabilities)
 
 # Convert the specification to a DFA
 print("Converting to DFA")
-spec = "(F a) & (F b) & (F c) & (F d) & (G ~obs)"
+spec = "(F a) & (G ~b) & (F c) & (F d) & (G ~obs)"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
@@ -109,7 +109,7 @@ bgcs.AddDerivativeCost(norm="L1", degree=1, weight=0.5)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
-        preprocessing=True,
+        preprocessing=False,
         verbose=True,
         max_rounded_paths=10,
         solver="mosek")

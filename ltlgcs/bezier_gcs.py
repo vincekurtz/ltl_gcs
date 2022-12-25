@@ -90,19 +90,6 @@ class BezierGraphOfConvexSets(DirectedGraph):
         Add a penalty on the distance between control points, which is an
         overapproximation of total path length.
 
-        Args:
-            weight: Weight for this cost, scalar.
-            norm: Norm to use to when evaluating distance between control
-                  points. See AddDerivativeCost for details.
-        """
-        self.AddDerivativeCost(0, weight=weight, norm=norm)
-
-    def AddDerivativeCost(self, degree, weight=1.0, norm="L2"):
-        """
-        Add a penalty on the derivative of the path. We do this by applying an
-        approximate length cost to the derivative of the path, e.g., on the distance 
-        between control points of the derivative.
-
         There are several norms we can use to approximate these lenths:
             L1 - most computationally efficient, and introduces only linear
             costs and constraints to the GCS problem.
@@ -113,6 +100,44 @@ class BezierGraphOfConvexSets(DirectedGraph):
             L2_squared - incentivises evenly space control points, which can
             produce some nice smooth-looking curves. Introduces cone constraints
             to the GCS problem. 
+
+        Args:
+            weight: Weight for this cost, scalar.
+            norm: Norm to use to when evaluating distance between control
+                  points. See AddDerivativeCost for details.
+        """
+        assert norm in ["L1", "L2", "L2_squared"], "invalid length norm"
+
+        # Get a symbolic expression for the difference between subsequent
+        # control points, in terms of the original decision variables
+        control_points = self.dummy_path_u.control_points()
+
+        A = []
+        for i in range(self.order):
+            with warnings.catch_warnings():
+                # ignore numpy warnings about subtracting symbolics
+                warnings.simplefilter('ignore', category=RuntimeWarning)
+                diff = control_points[i] - control_points[i+1]
+            A.append(DecomposeLinearExpressions(diff.flatten(),
+                        self.dummy_xu.flatten()))
+
+        # Apply a cost to the starting segment of each edge. 
+        for edge in self.gcs.Edges():
+            x = edge.xu()
+            for i in range(self.order):
+                if norm == "L1":
+                    cost = L1NormCost(weight*A[i], np.zeros(self.dim))
+                elif norm == "L2":
+                    cost = L2NormCost(weight*A[i], np.zeros(self.dim))
+                else:  # L2 squared
+                    cost = QuadraticCost(
+                            Q=weight*A[i].T@A[i], b=np.zeros(len(x)), c=0.0)
+                edge.AddCost(Binding[Cost](cost, x))
+
+    def AddDerivativeCost(self, degree, weight=1.0, norm="L2"):
+        """
+        Add a penalty on the derivative of the path. We do this by penalizing
+        some norm of the control points of the derivative of the path.
         
         Args:
             degree: The derivative to penalize. degree=0 is the original
@@ -134,11 +159,11 @@ class BezierGraphOfConvexSets(DirectedGraph):
         deriv_control_points = path_deriv.control_points()
 
         A = []
-        for i in range(self.order - degree):
+        for i in range(self.order - degree + 1):
             with warnings.catch_warnings():
                 # ignore numpy warnings about subtracting symbolics
                 warnings.simplefilter('ignore', category=RuntimeWarning)
-                diff = deriv_control_points[i] - deriv_control_points[i+1]
+                diff = deriv_control_points[i]# - deriv_control_points[i+1]
             A.append(DecomposeLinearExpressions(diff.flatten(),
                         self.dummy_xu.flatten()))
 

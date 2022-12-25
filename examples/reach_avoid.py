@@ -34,15 +34,16 @@ dfa_time = time.time() - dfa_start_time
 # Take the product of the DFA and the transition system to produce a graph of
 # convex sets
 start_point = [2.5, 0.7]
-order = 2
-continuity = 1
+order = 5
+continuity = 3
 product_start_time = time.time()
 bgcs = ts.Product(dfa, start_point, order, continuity)
 product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(norm="L2", degree=1, weight=0.5)
+bgcs.AddDerivativeCost(norm="L2", degree=1, weight=1.0)
+bgcs.AddDerivativeCost(norm="L2", degree=2, weight=0.1)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,

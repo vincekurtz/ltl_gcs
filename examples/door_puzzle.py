@@ -99,10 +99,11 @@ product_time = time.time() - product_start_time
 print("Solving Shortest Path")
 bgcs.AddLengthCost(norm="L2")
 bgcs.AddDerivativeCost(degree=1, weight=1.0)
+bgcs.AddDerivativeCost(degree=2, weight=1.0)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
-        preprocessing=True,
+        preprocessing=False,
         verbose=True,
         max_rounded_paths=10,
         solver="mosek")
