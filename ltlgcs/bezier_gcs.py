@@ -170,7 +170,7 @@ class BezierGraphOfConvexSets(DirectedGraph):
         # Apply a cost to the starting segment of each edge. 
         for edge in self.gcs.Edges():
             x = edge.xu()
-            for i in range(self.order - degree):
+            for i in range(self.order - degree + 1):
                 if norm == "L1":
                     cost = L1NormCost(weight*A[i], np.zeros(self.dim))
                 elif norm == "L2":
