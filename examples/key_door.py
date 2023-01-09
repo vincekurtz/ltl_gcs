@@ -69,7 +69,7 @@ if res.is_success():
             "#F14732": [["door1"],["door2"]],
             "#80BF80": [["key1"],["key2"]]
             }
-    ts.visualize(color_dict, background='black', edgewidth=0.0, alpha=1.0)
+    ts.visualize(color_dict, background='black', alpha=1.0)
     bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
     plt.gca().xaxis.set_visible(False)
     plt.gca().yaxis.set_visible(False)
