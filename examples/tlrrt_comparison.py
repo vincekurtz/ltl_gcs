@@ -1,6 +1,5 @@
 from ltlgcs.transition_system import TransitionSystem
 from ltlgcs.dfa import DeterministicFiniteAutomaton
-from ltlgcs.cdd import vpoly_to_hpoly
 
 import time
 import numpy as np
@@ -28,8 +27,7 @@ ts.AddPartition(HPolyhedron.MakeBox([0,0.7],[0.4,1.0]),[])
 ts.AddPartition(HPolyhedron.MakeBox([0.6,0.7],[1.0,1.0]),[])
 
 def triangle_at(x, y):
-    return vpoly_to_hpoly(VPolytope(
-        np.array([[x,y],[x+0.15,y],[x,y+0.15]]).T))
+    return VPolytope(np.array([[x,y],[x+0.15,y],[x,y+0.15]]).T)
 
 ts.AddPartition(triangle_at(0.1,0.7), ["l1"])
 ts.AddPartition(triangle_at(0.7,0.7), ["l2"])

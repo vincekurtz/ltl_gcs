@@ -1,6 +1,5 @@
 from ltlgcs.transition_system import TransitionSystem
 from ltlgcs.dfa import DeterministicFiniteAutomaton
-from ltlgcs.cdd import vpoly_to_hpoly
 
 import time
 import numpy as np
@@ -8,7 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 from copy import copy
 
-from pydrake.geometry.optimization import HPolyhedron, VPolytope
+from pydrake.geometry.optimization import VPolytope
 
 ##
 #
@@ -62,10 +61,7 @@ def generate_transition_system(num_partitions, label_dict, seed=0, xmax=15,
         region_index = vor.point_region[p]
         vertex_indices = vor.regions[region_index]
         vertices = vor.vertices[vertex_indices]
-
-        # convert to halfspace representation
-        vpoly = VPolytope(vertices.T)
-        hpoly = vpoly_to_hpoly(vpoly)
+        poly = VPolytope(vertices.T)
 
         # randomly generate labels
         labels = []
@@ -74,7 +70,7 @@ def generate_transition_system(num_partitions, label_dict, seed=0, xmax=15,
                 labels.append(label)
 
         if "obs" not in labels:
-            ts.AddPartition(hpoly, labels)
+            ts.AddPartition(poly, labels)
 
     ts.AddEdgesFromIntersections()
 

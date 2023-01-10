@@ -62,6 +62,11 @@ class TransitionSystem(DirectedGraph):
         assert isinstance(convex_set, ConvexSet)
         assert isinstance(labels, list)
         assert convex_set.ambient_dimension() == self.n
+
+        if isinstance(convex_set, VPolytope):
+            convex_set = HPolyhedron(convex_set)
+        elif not isinstance(convex_set, HPolyhedron):
+            raise TypeError("Only convex polyhedra are currently supported")
         
         vertex_index = self.v_idx;
         

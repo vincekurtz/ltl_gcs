@@ -1,6 +1,5 @@
 from ltlgcs.transition_system import TransitionSystem
 from ltlgcs.dfa import DeterministicFiniteAutomaton
-from ltlgcs.cdd import vpoly_to_hpoly
 
 import time
 import numpy as np
@@ -19,39 +18,23 @@ from pydrake.geometry.optimization import HPolyhedron, VPolytope
 ts = TransitionSystem(2)
 
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[0,0],[1,0],[0,0.5],[1,0.5]]).T
-        )), [])
+        VPolytope(np.array([[0,0],[1,0],[0,0.5],[1,0.5]]).T), [])
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[0,0.5],[0,1],[1,0.5]]).T
-        )), [])
+        VPolytope(np.array([[0,0.5],[0,1],[1,0.5]]).T), [])
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[0,1],[1,1],[1,0.5]]).T
-        )), [])
+        VPolytope(np.array([[0,1],[1,1],[1,0.5]]).T), [])
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[0,1],[0,1.5],[1,1]]).T
-        )), [])
+        VPolytope(np.array([[0,1],[0,1.5],[1,1]]).T), [])
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[0,1.5],[1,1.5],[1,1]]).T
-        )), [])
+        VPolytope(np.array([[0,1.5],[1,1.5],[1,1]]).T), [])
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[0,1.5],[0,2],[5,2],[5,1.5]]).T
-        )), [])
+        VPolytope(np.array([[0,1.5],[0,2],[5,2],[5,1.5]]).T), [])
 ts.AddPartition(
-        vpoly_to_hpoly(VPolytope(
-            np.array([[1.5,0],[1.5,1],[4.5,1.5],[5,1.5],[5,0]]).T
-        )), [])
+        VPolytope(np.array([[1.5,0],[1.5,1],[4.5,1.5],[5,1.5],[5,0]]).T), [])
 ts.AddPartition(
-        HPolyhedron.MakeBox([0.5,0.1],[0.8,0.4]),
-        ["b"])
+        HPolyhedron.MakeBox([0.5,0.1],[0.8,0.4]), ["b"])
 ts.AddPartition(
-        HPolyhedron.MakeBox([1.7,0.1],[2.0,0.4]),
-        ["a"])
+        HPolyhedron.MakeBox([1.7,0.1],[2.0,0.4]), ["a"])
 
 ts.AddEdgesFromIntersections()
 

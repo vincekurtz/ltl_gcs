@@ -5,7 +5,6 @@ Linear Temporal Logic Motion Planning via Graphs of Convex Sets
 - mona
 - ltlf2dfa
 - treelib
-- pycddlib
 
 # Testing
 
