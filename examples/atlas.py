@@ -89,7 +89,7 @@ dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
 
 # Take the product of the DFA and the transition system
-order = 5
+order = 3
 continuity = 2
 product_start_time = time.time()
 bgcs = ts.Product(dfa, q0, order, continuity)
@@ -97,7 +97,7 @@ product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost()
-bgcs.AddDerivativeCost(degree=2, weight=0.25)
+bgcs.AddDerivativeCost(degree=2, weight=0.1)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
