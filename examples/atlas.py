@@ -7,10 +7,13 @@ from ltlgcs.transition_system import TransitionSystem
 from ltlgcs.dfa import DeterministicFiniteAutomaton
 
 # Specify target positions and radius
-targets = {"l_hand" : np.array([-0.3, 1, 0.9]),
-           "r_hand" : np.array([0.8, -0.5, 1.8]), 
+targets = {"l_hand" : np.array([0.8, 0.5, 1.8]),
+           "r_hand" : np.array([0.8, -0.5, 1.7]), 
            "r_foot" : np.array([-0.5, -0.4, 0.5])}
-rad = 0.1
+target_colors = {"l_hand" : [0.1, 0.8, 0.1, 0.4],
+                 "r_hand" : [0.1, 0.1, 0.8, 0.4],
+                 "r_foot" : [0.8, 0.1, 0.1, 0.4]}
+size = 0.2
 
 # Create a MultibodyPlant model of the system
 builder = DiagramBuilder()
@@ -23,9 +26,9 @@ plant.Finalize()
 
 for name, p in targets.items():
     source = scene_graph.RegisterSource(f"{name}_target")
-    geometry = GeometryInstance(RigidTransform(p), Sphere(rad), f"{name}_target")
-    color = np.array([0.1, 0.8, 0.1, 0.4])
-    geometry.set_illustration_properties(MakePhongIllustrationProperties(color))
+    geometry = GeometryInstance(RigidTransform(p), Box(size, size, size), f"{name}_target")
+    geometry.set_illustration_properties(MakePhongIllustrationProperties(
+        target_colors[name]))
     scene_graph.RegisterAnchoredGeometry(source, geometry)
 
 ctrl = builder.AddSystem(ConstantVectorSource(np.zeros(plant.num_actuators())))
@@ -41,10 +44,11 @@ plant_context = diagram.GetMutableSubsystemContext(plant, diagram_context)
 # Construct a labeled transition system
 ts = TransitionSystem(30)
 
-# Construct convex sets using IRIS
+# Create labeled convex sets using IRIS
 iris_start_time = time.time()
 iris_options = IrisOptions()
-iris_options.iteration_limit = 1
+iris_options.iteration_limit = 100
+iris_options.num_additional_constraint_infeasible_samples = 5
 
 print("Generating convex set from initial position")
 q0 = plant.GetPositions(plant_context)
@@ -57,7 +61,7 @@ for name, p in targets.items():
     # Get inverse kinematics constraints for reaching the given target
     ik = InverseKinematics(plant)
     ik.AddPositionConstraint(plant.GetFrameByName(name), [0,0,0],
-            plant.world_frame(), p-rad/np.sqrt(2), p+rad/np.sqrt(2))
+            plant.world_frame(), p-size/2, p+size/2)
     ik.AddPositionCost(plant.GetFrameByName(name), [0,0,0], 
             plant.world_frame(), p, np.eye(3))
 
@@ -65,23 +69,21 @@ for name, p in targets.items():
     assert res.is_success()
     q = res.GetSolution(ik.q())
     plant.SetPositions(plant_context, q)
+    
+    diagram.ForcedPublish(diagram_context)
 
-    ## Run IRIS with the given constraints
-    #iris_options.prog_with_additional_constraints = ik.prog()
-    #hpoly = IrisInConfigurationSpace(plant, plant_context, iris_options)
+    # Run IRIS with the given constraints
+    iris_options.prog_with_additional_constraints = ik.prog()
+    hpoly = IrisInConfigurationSpace(plant, plant_context, iris_options)
 
-    ## Add a corresponding partition to the transition system
-    #ts.AddPartition(hpoly, [name])
-
-    # Faster alternative: make the robot reach specific configurations rather
-    # than convex sets with kinematic constraints
-    ts.AddPartition(HPolyhedron.MakeBox(q,q), [name])
+    # Add a corresponding partition to the transition system
+    ts.AddPartition(hpoly, [name])
 
 iris_time = time.time() - iris_start_time
 ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
-spec = "F (l_hand & F (r_hand & F r_foot))"
+spec = "F (l_hand & F (r_foot & F r_hand))"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
@@ -95,7 +97,7 @@ product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost()
-bgcs.AddDerivativeCost(degree=2, weight=0.5)
+bgcs.AddDerivativeCost(degree=2, weight=0.25)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
