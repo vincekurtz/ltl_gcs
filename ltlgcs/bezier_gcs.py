@@ -382,7 +382,7 @@ class BezierGraphOfConvexSets(DirectedGraph):
         if save:
             assert filename is not None, "must supply a filename to save the animation"
             print(f"Saving animation to {filename}, this may take a minute...")
-            ani.save(filename, writer=animation.PillowWriter(fps=60))
+            ani.save(filename, writer=animation.PillowWriter(fps=30))
 
         if show:
             plt.show()
