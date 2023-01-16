@@ -8,12 +8,12 @@ Hai Lin.
 
 ## Installation
 
+Make sure all dependencies are installed, then:
+
 ```
-git clone https://github.com/vincekurtz/ltl_gcs
-
-cd ltl_gcs
-
-pip install .
+$ git clone https://github.com/vincekurtz/ltl_gcs
+$ cd ltl_gcs
+$ pip install .
 ```
 
 ## Dependencies
