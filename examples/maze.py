@@ -17,21 +17,6 @@ from pydrake.geometry.optimization import HPolyhedron
 # Construct a labeled transition system based on a simple grid
 ts = TransitionSystem(2)
 
-#ts.AddPartition(
-#        HPolyhedron.MakeBox([2,0],[3,6]), 
-#        ["o"])
-#ts.AddPartition(
-#        HPolyhedron.MakeBox([0,8],[3,9]), 
-#        ["o"])
-#ts.AddPartition(
-#        HPolyhedron.MakeBox([4,9],[5,13]), 
-#        ["o"])
-#ts.AddPartition(
-#        HPolyhedron.MakeBox([6,1],[7,12]), 
-#        ["o"])
-#ts.AddPartition(
-#        HPolyhedron.MakeBox([8,6],[12,7]), 
-#        ["o"])
 ts.AddPartition(
         HPolyhedron.MakeBox([0,0],[2,8]), 
         [])
@@ -69,7 +54,7 @@ ts.AddPartition(
 ts.AddEdgesFromIntersections()
 
 # Convert the specification to a DFA
-spec = "~o U g"
+spec = "F g"
 dfa_start_time = time.time()
 dfa = DeterministicFiniteAutomaton(spec)
 dfa_time = time.time() - dfa_start_time
@@ -85,7 +70,8 @@ product_time = time.time() - product_start_time
 
 # Solve the planning problem
 bgcs.AddLengthCost(norm="L2")
-bgcs.AddDerivativeCost(norm="L2", degree=1, weight=0.1)
+bgcs.AddDerivativeCost(norm="L2", degree=1, weight=1.0)
+bgcs.AddDerivativeCost(norm="L2", degree=2, weight=1.0)
 solve_start_time = time.time()
 res = bgcs.SolveShortestPath(
         convex_relaxation=True,
@@ -100,6 +86,9 @@ if res.is_success():
     ts.visualize()
     bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
     
+    plt.gca().xaxis.set_visible(False)
+    plt.gca().yaxis.set_visible(False)
+    
     # Print timing infos
     print("\n")
     print("Solve Times:")
@@ -111,6 +100,8 @@ if res.is_success():
 
     print("GCS vertices: ", bgcs.nv())
     print("GCS edges: ", bgcs.ne())
+    
+    bgcs.AnimateSolution(res, save=False, filename='media/maze.gif')
 
     plt.show()
 else:

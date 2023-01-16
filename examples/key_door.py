@@ -70,7 +70,7 @@ if res.is_success():
             "#80BF80": [["key1"],["key2"]]
             }
     ts.visualize(color_dict, background='black', alpha=1.0)
-    bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+    bgcs.PlotSolution(res, plot_control_points=False, plot_path=True)
     
     plt.gca().xaxis.set_visible(False)
     plt.gca().yaxis.set_visible(False)
@@ -88,7 +88,7 @@ if res.is_success():
     print("GCS edges: ", bgcs.ne())
 
     # Make an animation of the trajectory
-    bgcs.AnimateSolution(res, save=True, filename='media/key_door.gif')
+    bgcs.AnimateSolution(res, save=False, filename='media/key_door.gif')
 
     plt.show()
 else:

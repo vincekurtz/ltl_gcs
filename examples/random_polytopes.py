@@ -115,7 +115,8 @@ if res.is_success():
     # Plot the resulting trajectory
     color_dict={"white":[[],["a"],["b"],["c"],["d"],["b","d"],["c","d"]]}
     ts.visualize(color_dict, background='black', edgewidth=0.5, alpha=1.0)
-    bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+    bgcs.PlotSolution(res, plot_control_points=False, plot_path=True)
+    
     plt.gca().xaxis.set_visible(False)
     plt.gca().yaxis.set_visible(False)
     
@@ -130,6 +131,9 @@ if res.is_success():
 
     print("GCS vertices: ", bgcs.nv())
     print("GCS edges: ", bgcs.ne())
+
+    # Make an animation of the trajectory
+    bgcs.AnimateSolution(res, save=False, filename='media/random_polytopes.gif')
 
     plt.show()
 else:

@@ -135,6 +135,9 @@ if res.is_success():
 
     print("GCS vertices: ", bgcs.nv())
     print("GCS edges: ", bgcs.ne())
+    
+    # Make an animation of the trajectory
+    bgcs.AnimateSolution(res, save=False, filename='media/door_puzzle.gif')
 
     plt.show()
 else:
