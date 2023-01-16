@@ -52,6 +52,7 @@ class TestBezierGcs(unittest.TestCase):
 
         bgcs.PlotScenario()
         bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+        bgcs.AnimateSolution(res, show=False)
         plt.show(block=False)  # use block=True to see the plot
 
     def test_kl_loop(self):

@@ -71,6 +71,7 @@ if res.is_success():
             }
     ts.visualize(color_dict, background='black', alpha=1.0)
     bgcs.PlotSolution(res, plot_control_points=True, plot_path=True)
+    
     plt.gca().xaxis.set_visible(False)
     plt.gca().yaxis.set_visible(False)
     
@@ -85,6 +86,9 @@ if res.is_success():
 
     print("GCS vertices: ", bgcs.nv())
     print("GCS edges: ", bgcs.ne())
+
+    # Make an animation of the trajectory
+    bgcs.AnimateSolution(res, save=True, filename='key_door.gif')
 
     plt.show()
 else:

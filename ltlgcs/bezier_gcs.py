@@ -4,6 +4,8 @@ from pydrake.all import *
 
 import warnings
 import numpy as np
+from math import floor
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from scipy.spatial import ConvexHull
@@ -346,6 +348,46 @@ class BezierGraphOfConvexSets(DirectedGraph):
             v = e.v()
 
         return curves
+    
+    def AnimateSolution(self, result, show=True, save=False, filename=None):
+        """
+        Create an animation of the solution on the current set of matplotlib
+        axes.
+
+        Args:
+            result:   MathematicalProgramResult from calling SolveShortestPath
+            show:     Flag for displaying the animation immediately
+            save:     Flag for saving a gif of the animation
+            filename: String denoting what file to save the animation to (.gif)
+        """
+        assert self.dim == 2, "animation only supported in 2D"
+
+        # Get current matplotlib figure and axes
+        fig = plt.gcf()
+        ax = plt.gca()
+
+        # Get the solution as a sequence of splines
+        s = self.ExtractSolution(result)
+        q = ax.scatter(*s[0].value(0), color='blue', s=50, zorder=3)
+
+        def animate(t):
+            segment = floor(t)
+            new_q = s[segment].value(t % 1).T
+            q.set_offsets(new_q)
+            return q
+
+        t = np.arange(0, len(s), 0.02)
+        ani = animation.FuncAnimation(fig, animate, t, interval=50, blit=False)
+
+        if save:
+            assert filename is not None, "must supply a filename to save the animation"
+            print(f"Saving animation to {filename}, this may take a minute...")
+            ani.save(filename, writer=animation.PillowWriter(fps=60))
+
+        if show:
+            plt.show()
+
+        return ani
 
     def PlotSolution(self, result, plot_control_points=True, plot_path=True):
         """
