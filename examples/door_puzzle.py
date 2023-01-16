@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from ltlgcs.transition_system import TransitionSystem
 from ltlgcs.dfa import DeterministicFiniteAutomaton
 

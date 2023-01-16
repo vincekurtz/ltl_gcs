@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pydrake.all import *
 import numpy as np
 import time
