@@ -1,0 +1,9 @@
+pydrake
+ltlf2dfa
+treelib
+matplotlib
+scipy
+sympy
+numpy
+graphviz
+pydot

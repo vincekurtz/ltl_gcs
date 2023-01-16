@@ -8,12 +8,20 @@ Hai Lin.
 
 ## Installation
 
+```
+git clone https://github.com/vincekurtz/ltl_gcs
+
+cd ltl_gcs
+
+pip install .
+```
+
 ## Dependencies
 
-- [pydrake](https://drake.mit.edu/)
-- [mona](https://www.brics.dk/mona/download.html)
+- [Drake](https://drake.mit.edu/)
+- [MONA](https://www.brics.dk/mona/download.html)
 - [ltlf2dfa](https://github.com/whitemech/LTLf2DFA)
-- [MOSEK](https://www.mosek.com/) (license only: installed with pydrake)
+- [MOSEK](https://www.mosek.com/) (license only)
 - treelib
 - matplotlib
 - scipy
@@ -21,7 +29,10 @@ Hai Lin.
 - numpy
 - graphviz
 - pydot
-- pickle
+
+Of these, only MONA and MOSEK require special consideration: all others can be
+installed with `pip`. For MOSEK, you only need a valid license: MOSEK itself is
+installed along with Drake. 
 
 ## Examples
 
