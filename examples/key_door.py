@@ -88,7 +88,7 @@ if res.is_success():
     print("GCS edges: ", bgcs.ne())
 
     # Make an animation of the trajectory
-    bgcs.AnimateSolution(res, save=True, filename='key_door.gif')
+    bgcs.AnimateSolution(res, save=True, filename='media/key_door.gif')
 
     plt.show()
 else:
