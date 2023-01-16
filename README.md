@@ -1,4 +1,6 @@
-# Linear Temporal Logic Motion Planning via Graphs of Convex Sets
+# Temporal Logic Motion Planning with Graphs of Convex Sets
+
+A fast and scalable motion planning framework for tasks expressed in Linear Temporal Logic (LTL). 
 
 This repository contains code to accompany the paper *Temporal Logic Motion
 Planning with Convex Optimization via Graphs of Convex Sets* by Vince Kurtz and
@@ -7,11 +9,12 @@ Hai Lin.
 ## Installation
 
 ## Dependencies
-- pydrake
-- mona
-- ltlf2dfa
+
+- [pydrake](https://drake.mit.edu/)
+- [mona](https://www.brics.dk/mona/download.html)
+- [ltlf2dfa](https://github.com/whitemech/LTLf2DFA)
+- [MOSEK](https://www.mosek.com/) (license only: installed with pydrake)
 - treelib
-- unittest
 - matplotlib
 - scipy
 - sympy
@@ -73,5 +76,37 @@ Solution:
 ![](media/random_polytopes.gif)
 
 File: `examples/random_polytopes.py`
+
+### Franka Panda Manipulator Arm
+
+Eventually reach a target, and don't pass through a doorway until pressing a button. For this example, run the `drake-visualizer` to view the result. 
+
+LTL specification:
+
+$$
+\varphi = \lozenge target \land \lnot doorway \mathsf{U} button
+$$
+
+Solution:
+
+![](media/robot_arm.gif)
+
+File: `examples/robot_arm.py`
+
+### Atlas Humanoid
+
+Touch the green target with the left hand, then touch the red target with the right foot, then touch the blue target with the right hand. For this example, run the `drake-visualizer` to view the result. 
+
+LTL specification:
+
+$$
+\varphi = \lozenge (left\\_hand \land \lozenge (right\\_foot \land \lozenge right\\_hand))
+$$
+
+Solution:
+
+![](media/atlas.gif)
+
+File: `examples/atlas.py`
 
 
