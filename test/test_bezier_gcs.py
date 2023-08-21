@@ -121,11 +121,11 @@ class TestBezierGcs(unittest.TestCase):
                 label = ""
 
             center_point = region.ChebyshevCenter()
-            plt.text(center_point[0], center_point[1],
+            plt.text(center_point[0] + 0.2, center_point[1],
                     label,
                     horizontalalignment='center',
                     verticalalignment='center',
-                    fontsize=12, color='black')
+                    fontsize=16, color='black')
 
         plt.gca().xaxis.set_visible(False)
         plt.gca().yaxis.set_visible(False)
