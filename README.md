@@ -2,8 +2,8 @@
 
 A fast and scalable motion planning framework for tasks expressed in Linear Temporal Logic (LTL). 
 
-This repository contains code to accompany the paper *Temporal Logic Motion
-Planning with Convex Optimization via Graphs of Convex Sets* by Vince Kurtz and
+This repository contains code to accompany the paper [*Temporal Logic Motion
+Planning with Convex Optimization via Graphs of Convex Sets*](https://arxiv.org/abs/2301.07773) by Vince Kurtz and
 Hai Lin. 
 
 ## Installation
