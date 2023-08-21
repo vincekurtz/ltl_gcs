@@ -201,10 +201,10 @@ class BezierGraphOfConvexSets(DirectedGraph):
         # Define edges
         for e in self.edges:
             # Get vertex IDs of source and target for this edge
-            u_id = gcs_verts[e[0]].id()
-            v_id = gcs_verts[e[1]].id()
+            u = gcs_verts[e[0]]
+            v = gcs_verts[e[1]]
 
-            self.gcs.AddEdge(u_id, v_id)
+            self.gcs.AddEdge(u, v)
        
         # Define source and target vertices
         source = gcs_verts[self.start_vertex]
